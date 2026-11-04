@@ -2,6 +2,7 @@
 /* RPsy app logic: quests, 3D battle quizzes, flashcards, progress. Data lives in data.js, 3D in chars3d.js. */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const RGC=false; /* guidance-counselor path is built later; RPsy only for now */
 const KEY='rpsy3',RANKS=['Novice Observer','Apprentice Listener','Junior Clinician','Case Analyst','Seasoned Practitioner','Master Mentor','Grand Sage'];
 const NOTE={r:'Official PRC psychologist exam (Aug 2023 program): Advance Theories of Personality 20%, Psychological Counseling and Psychotherapy 25%, Advance Psychological Assessment 30%, Advance Abnormal Psychology 25%. Confirm the current table of specifications with the PRC Board of Psychology.',g:'Subjects named in RA 9258 Sec. 15 and Board Resolution 02 s.2008: Foundations of Guidance; Counseling Theories, Tools and Techniques; Psychological Testing; Organization and Administration of Guidance Services; Group Process and Program Development. Confirm current weights with the PRC Board for Guidance and Counseling.'};
 const FOES=['Confirmation Bias Blob','Halo Effect Imp','Groupthink Gremlin','Anchoring Slime','Straw-man Sprite','Bystander Beast','Placebo Phantom','Cramming Cyclops','Overconfidence Ogre','Procrastination Pixie'];
@@ -12,7 +13,7 @@ const BADGES=[['first','First Blood','Answer your first question correctly','�
 const init=()=>({v:3,xp:0,streak:0,last:'',p:'r',hero:'',done:{},fa:{},err:[],cards:{},hist:[],sess:null,les:{},day:{d:'',q:0,f:0,g:0,c:0},badges:{},daily:'',tot:{a:0,c:0,f:0,best:0},set:{snd:1,theme:'auto',fz:1,mo:0}});
 let S=load();
 function load(){const o=init();try{const r=localStorage.getItem(KEY);if(r)Object.assign(o,JSON.parse(r));else{const old=localStorage.getItem('pa');if(old){const x=JSON.parse(old);['xp','streak','last','p','done','fa','err','cards','hist','les'].forEach(k=>{if(x[k]!==undefined)o[k]=x[k]})}}}catch(e){}
-  const d=init();o.set=Object.assign(d.set,o.set);o.tot=Object.assign(d.tot,o.tot);o.day=Object.assign(d.day,o.day);if(!o.badges)o.badges={};return o}
+  const d=init();o.set=Object.assign(d.set,o.set);o.tot=Object.assign(d.tot,o.tot);o.day=Object.assign(d.day,o.day);if(!o.badges)o.badges={};if(!RGC)o.p='r';return o}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.OL)OL.queue()};
 const pad=n=>String(n).padStart(2,'0'),ld=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())},td=()=>ld(Date.now());
 const lvl=()=>Math.floor(Math.sqrt(S.xp/40))+1,pc=(a,b)=>b?Math.round(100*a/b):0,rank=()=>RANKS[Math.min(lvl()-1,RANKS.length-1)];
@@ -56,8 +57,8 @@ const portrait=(id,px)=>{const u=R3.portrait(id,px||180);return u?`<img class="p
 /* ---------- navigation / chrome ---------- */
 let V='home',A=null,TM=0;
 const VIEWS={};
-function go(v,a){killStage();clearInterval(TM);V=v;A=a;render();scrollTo(0,0)}
-function render(){touch();applySet();chrome();save();document.body.classList.toggle('inq',V==='quiz'||V==='battle');VIEWS[V]()}
+function go(v,a){closePop();killStage();clearInterval(TM);V=v;A=a;render();scrollTo(0,0)}
+function render(){touch();applySet();chrome();save();document.body.classList.toggle('inq',V==='quiz'||V==='battle'||V==='lobby');VIEWS[V]()}
 function applySet(){const h=document.documentElement;if(S.set.theme==='auto')h.removeAttribute('data-theme');else h.setAttribute('data-theme',S.set.theme);h.style.setProperty('--fz',S.set.fz);h.classList.toggle('rm',!!S.set.mo)}
 function chrome(){const L=lvl(),b=40*(L-1)**2,n=40*L*L;
   $('#hd').innerHTML=`<button class="logo" data-v="home" aria-label="Home"><span>Ψ</span><b>RPsy</b></button><div class="chips"><span class="chip" title="Streak">🔥 ${S.streak}</span><span class="chip lvc" title="${rank()}">Lv ${L}<i style="--p:${pc(S.xp-b,n-b)}%"></i></span><button class="ib" data-v="find" aria-label="Search">🔍</button></div>`;
@@ -107,7 +108,7 @@ VIEWS.home=function(){
 /* ---------- LEARN ---------- */
 VIEWS.map=function(){const L=subs();
   $('#app').innerHTML=`<h1>${S.p=='r'?'RPsy':'RGC'} quest map</h1>
-  <div class="seg"><button class="${S.p=='r'?'on':''}" data-p="r">Psychologist (RPsy)</button><button class="${S.p=='g'?'on':''}" data-p="g">Guidance Counselor (RGC)</button></div>
+  ${RGC?`<div class="seg"><button class="${S.p=='r'?'on':''}" data-p="r">Psychologist (RPsy)</button><button class="${S.p=='g'?'on':''}" data-p="g">Guidance Counselor (RGC)</button></div>`:''}
   <button class="btn ghost wide" data-v="cards">🃏 Flashcards &amp; mistakes (${dueCards().length} due)</button>
   <details class="how"><summary>Exam structure and how unlocking works</summary><p class="mu">${NOTE[S.p]}</p><p class="mu">Score 60%+ over 2+ answered questions in a quest to open the next exam subject. Supporting topics are always open.</p></details>
   <div class="path">${L.map((s,i)=>{const m=mast(s),u=unlocked(s);return `<button class="pnode tilt ${u?'':'lk'} ${m>=80?'mx':''}" ${u?'':'disabled'} data-v="sub" data-a="${s.id}" style="--c:${s.col};--p:${m||0}%"><span class="coin"><i>${u?s.ic:'🔒'}</i></span><span class="nt"><b>${m>=80?'★ ':''}${esc(s.n)}</b><small>${m===null?'Not started':'Mastery '+m+'%'} · ${s.q.length} questions${s.sup?' · supporting':s.p.length>1?' · shared':''}</small><span class="pbar"><i style="width:${m||0}%"></i></span></span></button>`}).join('')}</div>`;
@@ -118,14 +119,14 @@ VIEWS.sub=function(){const s=sub(A),dn=S.les[s.id],m=mast(s);
   <div class="banner" style="--c:${s.col}"><span class="bic">${s.ic}</span><div><h1>${esc(s.n)}</h1><span class="tag">${s.q.length} questions · ${s.c.length} cards · ${m===null?'not started':'mastery '+m+'%'}</span></div></div>
   <div class="card"><h3>Lesson</h3><p>${esc(s.l)}</p>${s.k?`<h3>Quick facts</h3><p class="mu">${esc(s.k)}</p>`:''}
   <button class="btn ${dn?'ghost':'pri'}" id="rd" ${dn?'disabled':''}>${dn?'Lesson completed ✓':'I reviewed it: recalled in my own words (+15 XP)'}</button></div>
-  <h2>Tap cards to flip</h2><div class="mini">${s.c.map(c=>`<button class="flip" aria-label="Flip card"><span class="fi"><span class="ff">${esc(c[0])}</span><span class="fb">${esc(c[1])}</span></span></button>`).join('')}</div>
+  <h2>Tap cards to flip</h2><div class="mini">${s.c.map(c=>`<button class="flip" aria-label="Flip card"><span class="fi"><span class="ff">${esc(c[0])}</span><span class="fb">${esc(c[1])}${c[2]?`<em class="exs">e.g. ${esc(c[2])}</em>`:''}</span></span></button>`).join('')}</div>
   <div class="row2"><button class="btn gold" id="dr">⚔️ Battle drill</button><button class="btn aqua" id="dr2">All ${s.q.length} questions</button></div>`;
   $$('.flip').forEach(b=>b.onclick=()=>{b.classList.toggle('on');SND.tap()});
   $('#rd').onclick=()=>{S.les[s.id]=1;gain(15,$('#rd'));confetti(30);setTimeout(()=>go('sub',s.id),500)};
   $('#dr').onclick=()=>start('drill',[s],10,{boss:1});$('#dr2').onclick=()=>start('drill',[s],s.q.length,{boss:1});
 };
 VIEWS.find=function(){$('#app').innerHTML='<h1>Search</h1><input id="q" class="inp" placeholder="Search lessons, cards, questions" autofocus><div id="r"></div>';
-  $('#q').oninput=e=>{const t=e.target.value.toLowerCase().trim();let h='';if(t.length>1)D.forEach(s=>{if((s.n+s.l).toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Lesson</span> <a href="#" data-s="${s.id}">${s.ic} ${esc(s.n)}</a></div>`;s.c.forEach(c=>{if((c[0]+c[1]).toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Card</span> <b>${esc(c[0])}</b>: ${esc(c[1])}</div>`});s.q.forEach(q=>{if(q.q.toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Question</span> ${esc(q.q)}<br><span class="mu">Answer: ${esc(q.o[0])}</span></div>`})});
+  $('#q').oninput=e=>{const t=e.target.value.toLowerCase().trim();let h='';if(t.length>1)subs().forEach(s=>{if((s.n+s.l).toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Lesson</span> <a href="#" data-s="${s.id}">${s.ic} ${esc(s.n)}</a></div>`;s.c.forEach(c=>{if((c[0]+c[1]).toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Card</span> <b>${esc(c[0])}</b>: ${esc(c[1])}</div>`});s.q.forEach(q=>{if(q.q.toLowerCase().includes(t))h+=`<div class="card"><span class="tag">Question</span> ${esc(q.q)}<br><span class="mu">Answer: ${esc(q.o[0])}</span></div>`})});
     $('#r').innerHTML=h||(t.length>1?'<p class="mu">No matches.</p>':'');$$('[data-s]').forEach(a=>a.onclick=ev=>{ev.preventDefault();go('sub',a.dataset.s)})}};
 
 /* ---------- PLAY ---------- */
@@ -159,9 +160,9 @@ function start(type,L,n,o){o=o||{};let items=o.items;
 
 /* ---------- QUIZ ---------- */
 VIEWS.quiz=function(){const z=S.sess;if(!z)return go('home');const M=MODES[z.type];
-  $('#app').innerHTML=`<div class="qtop"><button class="ib" id="qx" aria-label="Quit">✕</button><div class="seg3" id="qp"></div><div class="hud"><span id="hl"></span><span class="cmb" id="cb"></span></div></div>
+  $('#app').innerHTML=`<div class="fit"><div class="qtop"><button class="ib" id="qx" aria-label="Quit">✕</button><div class="seg3" id="qp"></div><div class="hud"><span id="hl"></span><span class="cmb" id="cb"></span></div></div>
   ${M.inst?`<div class="stage3 bat" id="st"><div class="foe" id="foe"><b>${esc(z.foe)}</b><span class="hp"><i id="hpi"></i></span></div><div class="lbl" id="lbl"></div></div>`:''}
-  <div id="qa"></div>`;
+  <div id="qa" class="qbody"></div></div>`;
   if(M.inst){mount($('#st'),{mode:'battle',hero:hero().id,enemy:z.hp?parseInt(z.fcol.slice(1),16):0,accent:parseInt(z.fcol.slice(1),16)});if(!z.hp||z.hits>=z.hp){/* no foe */}}
   $('#qx').onclick=()=>{if(confirm('Leave this run? Progress is saved so you can resume.')){clearInterval(TM);go('home')}};
   if(z.end){clearInterval(TM);TM=setInterval(()=>{const l=Math.max(0,z.end-Date.now()),e=$('#tm');if(e){e.textContent=z.type=='speed'?Math.ceil(l/1e3)+'s':Math.floor(l/6e4)+':'+pad(l/1e3%60|0);e.classList.toggle('low',l<10000)}if(!l){clearInterval(TM);finish()}},250)}
@@ -172,9 +173,9 @@ function hud(){const z=S.sess;$('#qp').innerHTML=z.type=='speed'?'<b id="tm" cla
   const hp=$('#hpi');if(hp)hp.style.width=z.hp?Math.max(0,100-100*z.hits/z.hp)+'%':'0%'}
 function qstep(){const z=S.sess;if(!z)return;if(z.k>=z.items.length)return finish();const M=MODES[z.type],it=z.items[z.k],s=sub(it.s),q=s.q[it.i],mock=z.type=='mock',got=z.ans[z.k];hud();
   const lbl=$('#lbl');if(lbl)lbl.textContent='';
-  $('#qa').innerHTML=`<div class="qmeta"><span class="tag" style="--c:${s.col}">${s.ic} ${esc(s.n)}</span><span class="mu">${z.type=='speed'?'':(z.k+1)+'/'+z.items.length}</span>${mock?'<b id="tm" class="tm"></b>':''}</div>
+  $('#qa').innerHTML=`<div class="qmeta"><span class="tag" style="--c:${s.col}">${s.ic} ${esc(s.n)}</span><span class="mu">${z.type=='speed'?'':(z.k+1)+'/'+z.items.length}</span>${mock?'<b id="tm" class="tm"></b>':''}${z.pu>0&&M.inst&&z.type!='speed'?`<button class="btn ghost sm pu" id="pu">✂️ 50/50 · ${z.pu}</button>`:''}</div>
   <h2 class="qq">${esc(q.q)}</h2><div id="ops">${it.p.map((j,idx)=>`<button class="opt" data-j="${j}"><span class="lt">${'ABCD'[idx]}</span><span>${esc(q.o[j])}</span></button>`).join('')}</div>
-  ${z.pu>0&&M.inst&&z.type!='speed'?`<button class="btn ghost sm" id="pu">✂️ 50/50 (${z.pu} left)</button>`:''}<div id="ex"></div>`;
+  <div id="ex"></div>`;
   $$('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.j));const pu=$('#pu');if(pu)pu.onclick=()=>{if(z.pu<1||z.ans[z.k]!==undefined)return;z.pu--;shuf(it.p.filter(j=>j!==0)).slice(0,2).forEach(j=>{const b=$(`.opt[data-j="${j}"]`);b.disabled=true;b.classList.add('x')});pu.remove();save();SND.tap()};
   }
 function answer(j){const z=S.sess,it=z.items[z.k];if(z.ans[z.k]!==undefined)return;const s=sub(it.s),q=s.q[it.i],ok=j===0,M=MODES[z.type],mock=z.type=='mock',key=s.id+'.'+it.i;
@@ -188,11 +189,16 @@ function answer(j){const z=S.sess,it=z.items[z.k];if(z.ans[z.k]!==undefined)retu
     if(ST&&M.inst){if(z.hp&&z.hits<z.hp)ST.enemyAttack();else ST.hurt()}}
   if(mock){z.k++;save();return qstep()}
   $$('.opt').forEach(b=>{const jj=+b.dataset.j;b.disabled=true;if(jj===0)b.classList.add('c');else if(jj===j)b.classList.add('w')});
-  $('#ex').innerHTML=`<div class="exp ${ok?'ok':'no'}"><b>${ok?'✓ Correct!':'✗ Not quite.'}</b> ${esc(Array.isArray(q.x)?q.x[0]:q.x)}${!ok&&Array.isArray(q.x)?`<br><span class="mu">Your answer: ${esc(q.o[j])}. ${esc(q.x[j]||'')}</span>`:''}</div>${z.type=='speed'?'':'<button class="btn pri wide" id="nx">Continue</button>'}`;
   hud();save();checkBadges();
-  const go2=()=>{const dead=M.lives&&z.lives<=0;z.k++;save();if(dead)return finish();qstep()};
-  const nx=$('#nx');if(nx){nx.onclick=go2;nx.scrollIntoView({block:'nearest',behavior:'smooth'})}else setTimeout(go2,700)}
-document.addEventListener('keydown',e=>{if(V!=='quiz'||!S.sess||e.target.tagName==='INPUT')return;const k=e.key;if('1234'.includes(k)&&k.length==1){const b=$$('.opt')[+k-1];if(b&&!b.disabled)b.click()}else if((k==='Enter'||k===' ')&&$('#nx')){e.preventDefault();$('#nx').click()}});
+  let moved=0;const go2=()=>{if(moved)return;moved=1;const dead=M.lives&&z.lives<=0;z.k++;save();if(dead)return finish();qstep()};
+  if(ok){$('#ex').innerHTML=`<button class="exp ok slim" id="nx">✓ Correct!${z.combo>1?' 🔥 x'+z.combo:''} <small>tap to continue</small></button>`;$('#nx').onclick=go2;setTimeout(go2,z.type=='speed'?650:1300)}
+  else{const t0=Date.now();popup({ok:false,title:'Not quite',correct:q.o[0],why:Array.isArray(q.x)?q.x[0]:q.x,yours:q.o[j],yw:Array.isArray(q.x)?q.x[j]:''},()=>{if(z.type=='speed'&&z.end)z.end+=Date.now()-t0;go2()})}}
+/* popup explaining the correct answer after a miss (no scrolling needed) */
+function popup(o,onClose){closePop();const m=document.createElement('div');m.className='modal';m.id='pop';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');
+  m.innerHTML=`<div class="sheet"><h3>${o.ok?'✓ Correct!':'✗ '+esc(o.title||'Not quite')}</h3><p class="ans">Correct answer: <b>${esc(o.correct)}</b></p><p class="why">${esc(o.why||'')}</p>${o.yours?`<p class="mu yours">Your answer (${esc(o.yours)}): ${esc(o.yw||'')}</p>`:''}<button class="btn pri wide" id="popgo">Got it</button></div>`;
+  document.body.append(m);const done=()=>{if(!m.isConnected)return;m.remove();onClose&&onClose()};$('#popgo').onclick=done;m.onclick=e=>{if(e.target===m)done()};m._done=done;$('#popgo').focus({preventScroll:true})}
+function closePop(){const m=$('#pop');if(m)m.remove()}
+document.addEventListener('keydown',e=>{if(V!=='quiz'||!S.sess||e.target.tagName==='INPUT')return;const k=e.key;if('1234'.includes(k)&&k.length==1){const b=$$('.opt')[+k-1];if(b&&!b.disabled)b.click()}else if((k==='Enter'||k===' ')&&$('#pop')){e.preventDefault();$('#pop')._done()}else if((k==='Enter'||k===' ')&&$('#nx')){e.preventDefault();$('#nx').click()}});
 function finish(){clearInterval(TM);const z=S.sess;if(!z||z.done)return;z.done=true;const M=MODES[z.type];
   const n=z.type=='speed'||z.lives<=0&&M.lives?z.ans.filter(x=>x!==undefined).length:z.items.length;const ans=z.items.slice(0,Math.max(n,z.ans.length)),ok=ans.filter((it,k)=>z.ans[k]===0).length,tot=Math.max(ans.length,1),sc=pc(ok,tot);
   const dead=M.lives&&z.lives<=0,won=z.hp?z.hits>=z.hp:sc>=75;
@@ -223,8 +229,8 @@ let CT='rev',FREE=null;
 VIEWS.cards=function(){const L=FREE||dueCards(),tabs=`<div class="seg"><button class="${CT=='rev'?'on':''}" data-t="rev">Flashcards</button><button class="${CT=='err'?'on':''}" data-t="err">Mistakes (${S.err.length})</button></div>`;
   if(CT==='err')return mistakes(tabs);
   if(!L.length){$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}<div class="card center"><div class="trophy">🎉</div><h3>All caught up!</h3><p class="mu">Cards return on a spaced schedule (1, 3, 7, 14 days).</p><button class="btn pri" id="fa">Study all ${subs().reduce((a,s)=>a+s.c.length,0)} cards anyway</button></div>`;$$('[data-t]').forEach(b=>b.onclick=()=>{CT=b.dataset.t;render()});$('#fa').onclick=()=>{FREE=shuf(subs().flatMap(s=>s.c.map((c,i)=>({k:s.id+'.'+i,c,s,free:1}))));render()};return}
-  const c=L[0];$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}<p class="mu">${L.length} ${FREE?'in this study set':'due'} · ${c.s.ic} ${esc(c.s.n)}. Say the answer aloud, tap to flip, then swipe or tap.</p>
-  <div class="fscene"><div class="fcard" id="fc" tabindex="0" role="button" aria-label="Flip card"><div class="fside ffr" style="--c:${c.s.col}"><span class="tag">Term</span><div>${esc(c.c[0])}</div><small>Tap to flip</small></div><div class="fside fbk"><span class="tag">Answer</span><div>${esc(c.c[1])}</div></div></div></div>
+  const c=L[0];$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}<p class="mu chint">${L.length} ${FREE?'in this study set':'due'} · ${c.s.ic} ${esc(c.s.n)}. Say the answer aloud, tap to flip, then swipe or tap.</p>
+  <div class="fscene"><div class="fcard" id="fc" tabindex="0" role="button" aria-label="Flip card"><div class="fside ffr" style="--c:${c.s.col}"><span class="tag">Term</span><div>${esc(c.c[0])}</div><small>Tap to flip</small></div><div class="fside fbk"><span class="tag">Answer</span><div>${esc(c.c[1])}</div>${c.c[2]?`<p class="exs"><b>Real-life example:</b> ${esc(c.c[2])}</p>`:''}</div></div></div>
   <div class="row2" id="bt" style="visibility:hidden"><button class="btn no" id="no">✗ Missed it</button><button class="btn ok" id="yes">✓ Got it</button></div>${FREE?'<button class="btn ghost sm" id="ex">End study set</button>':''}`;
   $$('[data-t]').forEach(b=>b.onclick=()=>{CT=b.dataset.t;render()});const ex=$('#ex');if(ex)ex.onclick=()=>{FREE=null;render()};
   const fc=$('#fc');let flipped=false,sx=null,dx=0;const flip=()=>{flipped=!flipped;fc.classList.toggle('flipped',flipped);$('#bt').style.visibility=flipped?'visible':'hidden';SND.tap()};

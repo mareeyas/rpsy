@@ -12,7 +12,7 @@ The D1 database `rpsy` is created automatically in your Cloudflare account on th
 
 Or deploy by hand: `npx wrangler deploy`.
 
-If you keep hosting the static files elsewhere (for example GitHub Pages), add this before the scripts in `index.html` so the app talks to the Worker: `<script>window.RPSY_API='https://rpsy.<your-subdomain>.workers.dev'</script>`.
+The deployed Worker is at https://rpsy.mareeyaclemente.workers.dev. `index.html` already points the GitHub Pages copy at it. If you host the static files elsewhere, add this before the scripts in `index.html` so the app talks to the Worker: `<script>window.RPSY_API='https://rpsy.<your-subdomain>.workers.dev'</script>`.
 
 ## Local development
 
