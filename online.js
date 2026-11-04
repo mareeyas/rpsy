@@ -59,89 +59,109 @@ VIEWS.rank=function(){const my=user();
     $('#lb').innerHTML=r.rows.length?r.rows.map(x=>`<div class="lbr ${x.name===me?'me':''} ${x.rank<4?'top':''}"><span class="rk">${medal(x.rank)}</span>${av(x.hero)}<div class="nm"><b>${esc(x.name)}</b><small>Lv ${lvOf(x.xp)} · ${x.xp} XP${x.streak?' · 🔥'+x.streak:''}${x.wins?' · 🤺'+x.wins:''}</small></div><b class="sc">${x.score}</b></div>`).join('')+(r.me&&r.me.rank>50?`<div class="lbr me"><span class="rk">#${r.me.rank}</span><div class="nm"><b>${esc(r.me.name)}</b><small>Your rank</small></div><b class="sc">${r.me.score}</b></div>`:''):'<div class="card center"><div class="trophy">🏆</div><p class="mu">No one is on the board yet. Earn XP to take the first spot!</p></div>'}
   ).catch(e=>{if(V==='rank')$('#lb').innerHTML=`<div class="card center"><p class="mu">${esc(e.message)}</p></div>`})};
 
-/* ---- live battles ---- */
+/* ---- live battles (reusable rooms with a running scoreboard) ---- */
 let BT=null;
 const send=m=>{if(BT&&BT.ws&&BT.ws.readyState===1)BT.ws.send(JSON.stringify(m))};
 const wsUrl=code=>(API||location.origin).replace(/^http/,'ws')+'/api/battle/ws?code='+code+'&token='+AU.token;
 const heroOf=p=>p?(p.uid===BT.you?S.hero:p.hero)||'freud':'freud';
+const link=code=>location.origin+location.pathname+'?battle='+code;
 async function create(){try{await push();const r=await api('/api/battle/create',{method:'POST'});join(r.code)}catch(e){toast(e.message,'⚠️')}}
 function join(code){code=String(code||'').toUpperCase().trim();if(!AU)return toast('Sign in first to battle.','🔒');if(!/^[A-Z0-9]{5}$/.test(code))return toast('Enter the 5-character room code.','⚠️');
-  leave(true);BT={code,players:[],host:0,you:0,status:'conn',qs:null,k:-1,off:0,n:8};let ws;try{ws=new WebSocket(wsUrl(code))}catch(e){return toast('Could not connect.','⚠️')}
+  if(!S.hero){S.hero='freud';save()}
+  leave(true);BT={code,players:[],host:0,you:0,status:'conn',qs:null,k:-1,off:0,n:8,tally:[],rounds:0,answered:new Set()};let ws;try{ws=new WebSocket(wsUrl(code))}catch(e){return toast('Could not connect.','⚠️')}
   BT.ws=ws;ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}onMsg(m)};
-  ws.onclose=()=>{if(BT&&BT.ws===ws){BT.ws=null;BT.dropped=1;if(BT.status!=='done'){clearInterval(BT.tm);if(V==='lobby')lobby();else if(V==='battle')dropBanner()}}};
+  ws.onclose=()=>{if(BT&&BT.ws===ws){BT.ws=null;BT.dropped=1;clearInterval(BT.tm);if(V==='lobby')lobby();else if(V==='battle')dropBanner();else if(V==='vsres')resParts()}};ws.onerror=()=>{};
   go('lobby')}
 function leave(keep){if(BT){clearInterval(BT.tm);const w=BT.ws;BT.ws=null;try{w&&w.close()}catch(e){}if(!keep)BT=null}}
 function onMsg(m){if(!BT)return;if(m.sn)BT.off=Date.now()-m.sn;
   if(m.t==='hello')BT.you=m.you;
-  else if(m.t==='lobby'){BT.players=m.players;BT.host=m.host;if(BT.status!=='play'&&BT.status!=='done')BT.status=m.status;if(V==='lobby')lobby();else if(V==='battle')board()}
+  else if(m.t==='lobby'){BT.players=m.players;BT.host=m.host;BT.tally=m.tally||[];BT.rounds=m.rounds||0;if(V==='lobby')lobby();else if(V==='battle')board();else if(V==='vsres')resParts()}
   else if(m.t==='err'){toast(m.m,'⚠️');leave();go('vs')}
-  else if(m.t==='start'){BT.qs=m.qs;BT.status='play';if(V!=='battle')go('battle')}
-  else if(m.t==='q'){BT.k=m.k;BT.dur=m.dur;BT.at=m.at+BT.off;BT.my=undefined;BT.timed=false;if(V!=='battle')go('battle');showQ()}
+  else if(m.t==='err2')toast(m.m,'⚠️')
+  else if(m.t==='start'){BT.qs=m.qs;BT.status='play';BT.end=null;BT.koSaid=0;BT.k=-1;BT.nx=null;if(V!=='battle')go('battle')}
+  else if(m.t==='q'){BT.k=m.k;BT.dur=m.dur;BT.at=m.at+BT.off;BT.my=undefined;BT.timed=false;BT.nx=null;BT.answered=new Set();BT.fresh=Date.now()+(m.resume?0:1600);closePop();if(V!=='battle')go('battle');showQ()}
+  else if(m.t==='nx'){BT.nx={at:Date.now()+m.in,last:m.last,k:m.k,len:m.in}}
   else if(m.t==='ev')onEv(m);
-  else if(m.t==='end'){BT.end=m.ranking;BT.status='done';finishBattle()}}
+  else if(m.t==='end'){BT.end=m.ranking;BT.tally=m.tally||BT.tally;BT.rounds=m.rounds||BT.rounds;BT.status='done';finishBattle()}}
+const tallyHtml=()=>{const t=BT.tally||[];if(!t.length)return'';const top=t[0].wins>0?t[0].wins:-1;
+  return `<div class="card tally"><h3>🏅 Room scoreboard · ${BT.rounds} battle${BT.rounds==1?'':'s'} played</h3>${t.map(x=>`<div class="tr ${x.wins===top?'lead':''}">${av(x.uid===BT.you?S.hero:x.hero)}<b>${esc(x.name)}${x.wins===top?' 👑':''}</b><span>${x.wins} win${x.wins==1?'':'s'}</span><small>${x.battles} played</small></div>`).join('')}</div>`};
+function startBattle(){const all=[];subs().forEach(sb=>sb.q.forEach((q,i)=>all.push([sb.id,i])));send({t:'start',qs:shuf(all).slice(0,BT.n)})}
+function actions(){const host=BT.host===BT.you&&BT.you,few=BT.players.length<2;
+  if(BT.dropped)return `<div class="card center"><p class="mu">Connection lost.</p><button class="btn pri" id="lrj">Rejoin room</button></div>`;
+  return host?`<label class="qsel mu">Questions <select id="lq" class="inp">${[5,8,12].map(n=>`<option ${n==BT.n?'selected':''}>${n}</option>`).join('')}</select></label><button class="btn gold xl wide" id="lst" ${few?'disabled':''}>${few?'Waiting for another player…':BT.rounds?'⚔️ Play again in this room':'⚔️ Start battle'}</button>`:`<p class="mu center">Waiting for the host to start${BT.rounds?' the next battle':''}…</p>`}
+function bindActions(){const rj=$('#lrj');if(rj)rj.onclick=()=>join(BT.code);if($('#lq'))$('#lq').onchange=e=>BT.n=+e.target.value;const s=$('#lst');if(s)s.onclick=startBattle}
 VIEWS.vs=function(){
-  $('#app').innerHTML=`<h1>🤺 Battle Friends</h1><p class="mu">2–4 players answer the same questions at the same time. Every correct answer damages everyone else’s HP, and faster answers score more. Last one standing or the top score wins.</p>
+  $('#app').innerHTML=`<h1>🤺 Battle Friends</h1><p class="mu">2–4 players answer the same questions at the same time. Every correct answer damages everyone else’s HP, and faster answers score more. Keep the same room to play again and again; it tracks who wins the most battles.</p>
   ${AU?`<button class="btn gold xl wide" id="vc">Create a room</button><div class="card"><h3>Join with a code</h3><input class="inp codein" id="vj" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocomplete="off" spellcheck="false"><button class="btn pri wide" id="vjb">Join battle</button></div>`:`<div class="card center"><div class="trophy">🔒</div><p>Sign in to battle other players.</p><button class="btn gold" data-v="me">Sign in or create account</button></div>`}`;
   if(AU){$('#vc').onclick=create;$('#vjb').onclick=()=>join($('#vj').value);$('#vj').onkeydown=e=>{if(e.key==='Enter')join($('#vj').value)}}};
+function copyLink(){const l=link(BT.code);navigator.clipboard?navigator.clipboard.writeText(l).then(()=>toast('Invite link copied','📋')).catch(()=>toast('Code: '+BT.code,'📋')):toast('Code: '+BT.code,'📋')}
+function shareLink(){const l=link(BT.code);if(navigator.share)navigator.share({title:'RPsy battle',text:'Join my RPsy battle! Room '+BT.code,url:l}).catch(()=>{});else copyLink()}
 function lobby(){if(!BT)return go('vs');
-  if(V!=='lobby'||!$('#lp')){$('#app').innerHTML=`<button class="btn ghost sm" id="lx">← Leave room</button><div class="card center"><small class="mu">Room code · share it with friends</small><div class="rcode" id="rcode">${esc(BT.code)}</div><div class="row2"><button class="btn ghost sm" id="lcp">📋 Copy invite link</button><button class="btn ghost sm" id="lsh">📤 Share</button></div></div><div class="lob" id="lp"></div><div id="la"></div>`;
-    $('#lx').onclick=()=>{leave();go('vs')};const link=location.origin+location.pathname+'?battle='+BT.code;
-    $('#lcp').onclick=async()=>{try{await navigator.clipboard.writeText(link);toast('Invite link copied','📋')}catch(e){toast('Code: '+BT.code,'📋')}};
-    $('#lsh').onclick=()=>{if(navigator.share)navigator.share({title:'RPsy battle',text:'Join my RPsy battle! Room '+BT.code,url:link}).catch(()=>{});else $('#lcp').click()}}
-  const host=BT.host===BT.you&&BT.you;
+  if(V!=='lobby'||!$('#lp')){$('#app').innerHTML=`<div class="fit lobfit"><button class="btn ghost sm" id="lx">← Leave room</button><div class="card center rm"><small class="mu">Room code · stays open, reuse it any time</small><div class="rcode" id="rcode">${esc(BT.code)}</div><div class="row2"><button class="btn ghost sm" id="lcp">📋 Copy link</button><button class="btn ghost sm" id="lsh">📤 Share</button></div></div><div class="lob" id="lp"></div><div id="lt"></div><div id="la" class="lact"></div></div>`;
+    $('#lx').onclick=()=>{leave();go('vs')};$('#lcp').onclick=copyLink;$('#lsh').onclick=shareLink}
   $('#lp').innerHTML=BT.players.length?BT.players.map(p=>`<div class="lp ${p.on?'':'off'} ${p.uid===BT.you?'me':''}">${av(heroOf(p))}<b>${esc(p.name)}</b><small>${p.uid===BT.host?'👑 Host':'Ready'}${p.uid===BT.you?' · You':''}</small></div>`).join('')+Array.from({length:Math.max(0,4-BT.players.length)},()=>'<div class="lp empty"><span class="pt av em">?</span><small>Waiting…</small></div>').join(''):'<p class="mu center">Connecting…</p>';
-  $('#la').innerHTML=BT.dropped?`<div class="card center"><p class="mu">Connection lost.</p><button class="btn pri" id="lrj">Rejoin</button></div>`:host?`<label class="sans mu">Questions <select id="lq" class="inp">${[5,8,12].map(n=>`<option ${n==BT.n?'selected':''}>${n}</option>`).join('')}</select></label><button class="btn gold xl wide" id="lst" ${BT.players.length<2?'disabled':''}>${BT.players.length<2?'Waiting for another player…':'⚔️ Start battle'}</button>`:`<p class="mu center">Waiting for the host to start…</p>`;
-  const rj=$('#lrj');if(rj)rj.onclick=()=>join(BT.code);const s=$('#lst');
-  if($('#lq'))$('#lq').onchange=e=>BT.n=+e.target.value;
-  if(s)s.onclick=()=>{const all=[];subs().forEach(sb=>sb.q.forEach((q,i)=>all.push([sb.id,i])));send({t:'start',qs:shuf(all).slice(0,BT.n)})}}
+  $('#lt').innerHTML=tallyHtml();$('#la').innerHTML=actions();bindActions()}
 VIEWS.lobby=lobby;
 VIEWS.battle=function(){if(!BT)return go('vs');
-  $('#app').innerHTML=`<div class="qtop"><button class="ib" id="vx" aria-label="Leave">✕</button><div class="vtb" id="vtb"><i></i></div><span class="chip" id="vk">Get ready</span></div><div class="stage3 bat" id="st"></div><div class="vb" id="vb"></div><div id="vdrop"></div><div id="vwrap"><div id="vq" class="veil"></div><div id="vcd" class="vcd"></div></div>`;
+  $('#app').innerHTML=`<div class="fit"><div class="qtop"><button class="ib" id="vx" aria-label="Leave">✕</button><div class="vtb" id="vtb"><i></i></div><span class="chip" id="vk">Get ready</span></div><div class="stage3 bat" id="st"></div><div class="vb" id="vb"></div><div id="vdrop"></div><div class="qbody vwrap"><div id="vq" class="veil vqf"></div><div id="vcd" class="vcd"></div></div></div>`;
   mount($('#st'),{mode:'battle',hero:S.hero||'freud',accent:0xff6bd6});const opp=BT.players.find(p=>p.uid!==BT.you);if(ST&&ST.setRival)ST.setRival(heroOf(opp));
   $('#vx').onclick=()=>{if(confirm('Leave this battle?')){leave();go('home')}};board();if(BT.k>=0)showQ();if(BT.dropped)dropBanner()};
-function dropBanner(){const d=$('#vdrop');if(d){d.innerHTML='<div class="card center"><p class="mu">Connection lost.</p><button class="btn pri" id="vrj">Rejoin battle</button></div>';$('#vrj').onclick=()=>join(BT.code)}}
+function dropBanner(){const d=$('#vdrop');if(d){d.innerHTML='<div class="exp no slim">Connection lost. <button class="btn pri sm" id="vrj">Rejoin</button></div>';$('#vrj').onclick=()=>join(BT.code)}}
 function board(){const b=$('#vb');if(!b||!BT)return;b.innerHTML=BT.players.map(p=>`<div class="vp ${p.uid===BT.you?'me':''} ${p.hp<=0?'ko':''} ${p.on?'':'off'}" data-u="${p.uid}">${av(heroOf(p))}<div><b>${esc(p.name)}</b><span class="hp"><i style="width:${Math.max(0,p.hp)}%"></i></span></div><em>${p.score}</em></div>`).join('')}
 function showQ(){if(V!=='battle'||!BT||BT.k<0||!BT.qs)return;const it=BT.qs[BT.k],s=it&&sub(it[0]),q=s&&s.q[it[1]];
   if(!q){send({t:'ans',k:BT.k,ok:false,ms:20000});return}
   BT.order=shuf([0,1,2,3]);const me=BT.players.find(p=>p.uid===BT.you),ko=me&&me.hp<=0;
   $('#vk').textContent=(BT.k+1)+'/'+BT.qs.length;
-  $('#vq').className='veil';$('#vq').innerHTML=`<div class="qmeta"><span class="tag" style="--c:${s.col}">${s.ic} ${esc(s.n)}</span></div><h2 class="qq">${esc(q.q)}</h2><div id="ops">${BT.order.map((j,i)=>`<button class="opt" data-j="${j}"><span class="lt">${'ABCD'[i]}</span><span>${esc(q.o[j])}</span></button>`).join('')}</div><div id="vex"></div>`;
+  $('#vq').className='veil vqf';$('#vq').innerHTML=`<div class="qmeta"><span class="tag" style="--c:${s.col}">${s.ic} ${esc(s.n)}</span></div><h2 class="qq">${esc(q.q)}</h2><div id="ops">${BT.order.map((j,i)=>`<button class="opt" data-j="${j}"><span class="lt">${'ABCD'[i]}</span><span>${esc(q.o[j])}</span></button>`).join('')}</div><div id="vex" class="vstat"></div>`;
   $$('#ops .opt').forEach(b=>b.onclick=()=>pick(+b.dataset.j));
-  if(ko){$('#vex').innerHTML='<div class="exp no"><b>Knocked out!</b> You can keep watching until the battle ends.</div>';$$('#ops .opt').forEach(b=>b.disabled=true)}
-  clearInterval(BT.tm);BT.tm=setInterval(tick,100);tick()}
+  if(ko){$('#vex').innerHTML='<div class="exp no slim"><b>Knocked out!</b> Keep watching until the battle ends.</div>';$$('#ops .opt').forEach(b=>b.disabled=true)}
+  BT.lastStat='';clearInterval(BT.tm);BT.tm=setInterval(tick,100);tick()}
+function stat(){const ex=$('#vex');if(!ex||!BT)return;const now=Date.now();let h='';
+  if(BT.nx){const l=Math.max(0,BT.nx.at-now),sec=Math.ceil(l/1000);h=`<div class="nxt"><b>${BT.nx.last?'🏁 Results in '+sec+'…':'⏭ Next question in '+sec+'…'}</b><span class="nb"><i style="width:${100-100*l/Math.max(BT.nx.len,1)}%"></i></span></div>`}
+  else if(BT.my!==undefined||BT.timed){const w=BT.players.filter(p=>p.on&&p.hp>0&&p.uid!==BT.you&&!BT.answered.has(p.uid)).map(p=>p.name);h=w.length?`<div class="nxt wait">⏳ Waiting for ${esc(w.join(', '))}…</div>`:''}
+  else if(now<BT.fresh&&BT.k>0)h=`<div class="nxt fresh">🆕 Question ${BT.k+1} is live!</div>`;
+  if(h!==BT.lastStat){BT.lastStat=h;const keep=ex.querySelector('.exp');ex.innerHTML=(keep?keep.outerHTML:'')+h}
+  const nb=ex.querySelector('.nb i');if(nb&&BT.nx)nb.style.width=(100-100*Math.max(0,BT.nx.at-now)/Math.max(BT.nx.len,1))+'%'}
 function tick(){if(!BT||V!=='battle'){BT&&clearInterval(BT.tm);return}const now=Date.now(),rem=BT.at-now,vq=$('#vq'),cd=$('#vcd');if(!vq)return;
   if(rem>0){cd.textContent=Math.ceil(rem/1000);return}
-  if(vq.classList.contains('veil')){vq.classList.remove('veil');cd.textContent=''}
+  if(vq.classList.contains('veil')){vq.classList.remove('veil');vq.classList.add('qin');cd.textContent=''}
   const left=Math.max(0,BT.dur-(now-BT.at)),bar=$('#vtb i');if(bar){bar.style.width=100*left/BT.dur+'%';bar.classList.toggle('low',left<5000)}
-  if(left<=0&&BT.my===undefined&&!BT.timed){BT.timed=true;reveal(null)}}
+  if(left<=0&&BT.my===undefined&&!BT.timed){BT.timed=true;reveal(null)}stat()}
 function rec(s,i,ok){const key=s.id+'.'+i,d=S.done[s.id]||(S.done[s.id]={a:0,c:0});d.a++;if(ok)d.c++;S.fa[key]=ok?1:0;S.tot.a++;if(ok)S.tot.c++;touch();S.day.q++;const ei=S.err.findIndex(e=>e.s+'.'+e.i==key);if(ok&&ei>=0)S.err.splice(ei,1);else if(!ok&&ei<0)S.err.push({s:s.id,i});save()}
 function pick(j){if(!BT||BT.my!==undefined||$('#vq').classList.contains('veil')||BT.timed)return;const me=BT.players.find(p=>p.uid===BT.you);if(me&&me.hp<=0)return;
   const it=BT.qs[BT.k],s=sub(it[0]),ok=j===0;BT.my=j;send({t:'ans',k:BT.k,ok,ms:Math.max(0,Date.now()-BT.at)});rec(s,it[1],ok);if(ok){SND.ok();buzz(15)}else{SND.no();buzz([40,40,40])}reveal(j)}
 function reveal(j){if(!$('#ops'))return;const it=BT.qs[BT.k],q=sub(it[0]).q[it[1]];
   $$('#ops .opt').forEach(b=>{const jj=+b.dataset.j;b.disabled=true;if(jj===0)b.classList.add('c');else if(jj===j)b.classList.add('w')});
-  const ok=j===0;$('#vex').innerHTML=`<div class="exp ${ok?'ok':'no'}"><b>${j===null?'⏱ Time’s up.':ok?'✓ Correct!':'✗ Not quite.'}</b> ${esc(Array.isArray(q.x)?q.x[0]:q.x)}</div>`}
-function onEv(m){if(!BT)return;const P=u=>BT.players.find(p=>p.uid===u),a=P(m.uid);if(a)a.score=m.score;m.hits.forEach(h=>{const t=P(h.uid);if(t)t.hp=h.hp});if(V!=='battle')return;board();
+  if(j===0)$('#vex').innerHTML='<div class="exp ok slim">✓ Correct!</div>';
+  else popup({ok:false,title:j===null?'Time’s up':'Not quite',correct:q.o[0],why:Array.isArray(q.x)?q.x[0]:q.x,yours:j===null?'':q.o[j],yw:j===null?'':(Array.isArray(q.x)?q.x[j]:'')},null);
+  BT.lastStat='';stat()}
+function onEv(m){if(!BT)return;const P=u=>BT.players.find(p=>p.uid===u),a=P(m.uid);if(a)a.score=m.score;m.hits.forEach(h=>{const t=P(h.uid);if(t)t.hp=h.hp});BT.answered&&BT.answered.add(m.uid);if(V!=='battle')return;board();
   const me=BT.you;if(ST&&ST.setRival){
     if(m.uid===me&&m.ok&&m.hits.length){const tg=P(m.hits[0].uid);if(ST.rivalId!==heroOf(tg))ST.setRival(heroOf(tg));ST.attack(()=>ST.rivalHit());floatText('+'+m.pts,$('#st'))}
     else if(m.ok&&m.uid!==me&&m.hits.some(h=>h.uid===me)){if(ST.rivalId!==heroOf(a))ST.setRival(heroOf(a));ST.rivalAttack(()=>{ST.hurt();SND.no();buzz(60)})}}
   const mine=P(me);if(mine&&mine.hp<=0&&!BT.koSaid){BT.koSaid=1;toast('You were knocked out!','💥')}
-  const pe=document.querySelector(`.vp[data-u="${m.uid}"]`);if(pe&&m.ok){pe.classList.add('pop');setTimeout(()=>pe.classList.remove('pop'),600)}}
-function finishBattle(){if(!BT)return;clearInterval(BT.tm);const r=BT.end,i=r.findIndex(x=>x.uid===BT.you),me=r[i]||{correct:0},win=i===0&&r.length>1;
-  const xp=me.score===undefined?0:15+me.correct*5+(win?30:0);BT.xp=xp;BT.win=win;BT.rank=i+1;gain(xp);touch();S.day.g++;if(win)award('pvp');checkBadges();save();go('vsres')}
+  const pe=document.querySelector(`.vp[data-u="${m.uid}"]`);if(pe&&m.ok){pe.classList.add('pop');setTimeout(()=>pe.classList.remove('pop'),600)}stat()}
+function finishBattle(){if(!BT)return;clearInterval(BT.tm);closePop();const r=BT.end,i=r.findIndex(x=>x.uid===BT.you),me=r[i]||{correct:0},win=i===0&&r.length>1;
+  const xp=15+(me.correct||0)*5+(win?30:0);BT.xp=xp;BT.win=win;BT.rank=i+1;gain(xp);touch();S.day.g++;if(win)award('pvp');checkBadges();save();go('vsres')}
+function resParts(){if(!BT||V!=='vsres')return;const t=$('#rt');if(t)t.innerHTML=tallyHtml();const a=$('#ra');if(a){a.innerHTML=actions();bindActions()}}
 VIEWS.vsres=function(){if(!BT||!BT.end)return go('vs');const r=BT.end;
   $('#app').innerHTML=`<div class="stage3 win" id="st"></div><div class="resh"><h1>${BT.win?'🏆 You won!':'Battle over'}</h1><p class="mu">You placed #${BT.rank} of ${r.length} · +${BT.xp} XP</p></div>
   ${r.map((x,i)=>`<div class="lbr ${x.uid===BT.you?'me':''} ${i<3?'top':''}"><span class="rk">${medal(i+1)}</span>${av(x.uid===BT.you?S.hero:x.hero)}<div class="nm"><b>${esc(x.name)}</b><small>${x.correct} correct · ${Math.max(0,x.hp)} HP left</small></div><b class="sc">${x.score}</b></div>`).join('')}
-  <div class="row2"><button class="btn gold" id="rm">↻ New room</button><button class="btn pri" data-v="home">Home</button></div>`;
+  <div id="rt"></div><div id="ra"></div>
+  <div class="row2"><button class="btn ghost" id="rl">📋 Invite link</button><button class="btn ghost" id="lv">Leave room</button></div>`;
   mount($('#st'),{mode:'hero',hero:S.hero||'freud',accent:0xffc83d});if(ST)setTimeout(()=>ST&&(BT&&BT.win?ST.cheer():ST.wave()),400);if(BT.win){confetti(110);SND.win()}
-  $('#rm').onclick=()=>{leave();create()}};
+  resParts();$('#rl').onclick=copyLink;$('#lv').onclick=()=>{leave();go('home')}};
+/* ---- invite link landing: ask to sign in, then drop the player into the room ---- */
+VIEWS.invite=function(){const code=sessionStorage.getItem('rpsy_join')||'';
+  $('#app').innerHTML=`<div class="card center invite"><div class="trophy">🤺</div><h1>You’re invited to a battle!</h1><p class="mu">Room <b class="rcode sm">${esc(code)}</b></p><p>Sign in or create a free account and you’ll go straight into the room.</p></div>${card()}`;bind()};
 
 /* ---- boot ---- */
 addEventListener('online',()=>{if(AU)push()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&AU&&tq)push()});
-function boot(){const code=new URLSearchParams(location.search).get('battle');
-  if(AU)pull().then(()=>{if(['home','me','map','rank'].includes(V))render()}).catch(e=>{if(e.status===401){setAuth(null);st='out'}else st='err'}).finally(()=>{if(code&&AU)join(code)});
-  if(code){if(!AU){sessionStorage.setItem('rpsy_join',code.toUpperCase());toast('Sign in to join battle '+code.toUpperCase(),'🤺');go('me')}}
-  if(code)history.replaceState(null,'',location.pathname)}
+function boot(){const q=new URLSearchParams(location.search).get('battle'),code=q?q.toUpperCase():sessionStorage.getItem('rpsy_join');
+  if(q)history.replaceState(null,'',location.pathname);
+  if(code&&!AU){sessionStorage.setItem('rpsy_join',code);go('invite')}
+  if(AU)pull().then(()=>{if(['home','me','map','rank'].includes(V))render()}).catch(e=>{if(e.status===401){setAuth(null);st='out';if(code){sessionStorage.setItem('rpsy_join',code);go('invite')}}else st='err'}).finally(()=>{if(code&&AU){sessionStorage.removeItem('rpsy_join');join(code)}})}
 boot();
 return{user,card,bind,queue,push,pull,merge,join,bt:()=>BT};
 })();
