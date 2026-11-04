@@ -4,7 +4,7 @@ Study app for the Philippine psychologist (RPsy) and guidance counselor (RGC) li
 
 ## Deploy the online features (Cloudflare)
 
-The D1 database `rpsy` already exists in the Cloudflare account and is wired in `wrangler.toml`. Tables are created automatically on the first request.
+The D1 database `rpsy` is created automatically in your Cloudflare account on the first deploy (wrangler 4 provisions it from the binding in `wrangler.toml`), and its tables are created on the first request.
 
 1. Create an API token at Cloudflare dashboard > My Profile > API Tokens using the "Edit Cloudflare Workers" template (add D1 edit permission).
 2. In the GitHub repo, add secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
