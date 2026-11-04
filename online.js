@@ -23,6 +23,7 @@ function merge(L,R){const base=(R.xp||0)>(L.xp||0)?R:L,oth=base===R?L:R,o=JSON.p
   const seen=new Set(),err=[];[...(base.err||[]),...(oth.err||[])].forEach(e=>{const k=e.s+'.'+e.i;if(!seen.has(k)&&o.fa[k]!==1){seen.add(k);err.push(e)}});o.err=err;
   o.cards={};for(const k of new Set([...Object.keys(L.cards||{}),...Object.keys(R.cards||{})])){const a=(L.cards||{})[k],b=(R.cards||{})[k];o.cards[k]=!a?b:!b?a:((a.seen||0)>=(b.seen||0)?a:b)}
   const hs=new Set(),hist=[];[...(oth.hist||[]),...(base.hist||[])].forEach(h=>{const k=JSON.stringify(h);if(!hs.has(k)){hs.add(k);hist.push(h)}});o.hist=hist.slice(-60);
+  o.story={};for(const id of new Set([...Object.keys(L.story||{}),...Object.keys(R.story||{})])){const a=(L.story||{})[id]||{},b=(R.story||{})[id]||{};o.story[id]={};for(const k of new Set([...Object.keys(a),...Object.keys(b)]))o.story[id][k]=Math.max(a[k]||0,b[k]||0)}
   o.badges=Object.assign({},oth.badges,base.badges);o.les=Object.assign({},oth.les,base.les);
   o.tot={};for(const k of Object.keys(d.tot))o.tot[k]=Math.max((L.tot||{})[k]||0,(R.tot||{})[k]||0);
   const lat=(L.last||'')>=(R.last||'')?L:R;o.last=lat.last||'';o.streak=lat.streak||0;
@@ -51,7 +52,7 @@ function bind(){paint();const e=$('#ae');
 /* ---- leaderboard ---- */
 let RS='all';
 const medal=n=>n==1?'🥇':n==2?'🥈':n==3?'🥉':n;
-const av=h=>{const u=R3.portrait(R3.byId[h]?h:'freud',90);return u?`<img class="pt av" src="${u}" alt="" draggable="false">`:'<span class="pt av em">🧑‍🏫</span>'};
+const av=h=>portrait(R3.byId[h]?h:'freud',90,'pt av');
 VIEWS.rank=function(){const my=user();
   $('#app').innerHTML=`<h1>🏆 Leaderboard</h1><div class="seg"><button data-sc="all" class="${RS=='all'?'on':''}">All-time XP</button><button data-sc="week" class="${RS=='week'?'on':''}">This week</button></div>${my?'':'<div class="card row"><span class="mu">Sign in to appear on the board.</span><button class="btn gold sm" data-v="me">Sign in</button></div>'}<div id="lb"><p class="mu">Loading…</p></div><button class="btn ghost wide" id="lr">↻ Refresh</button>`;
   $$('[data-sc]').forEach(b=>b.onclick=()=>{RS=b.dataset.sc;SND.tap();render()});$('#lr').onclick=()=>render();
