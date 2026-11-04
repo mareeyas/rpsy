@@ -10,7 +10,7 @@ const cache={};
 function noiseTex(key,w,fn,rx,ry,srgb){return cache[key]||(cache[key]=ctex(cnv(w,w,fn),rx,ry,srgb))}
 const skinBump=()=>noiseTex('sb',256,(g,w,h)=>{const id=g.createImageData(w,h),r=rng(7);for(let i=0;i<w*h;i++){const v=118+r()*24;id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255}g.putImageData(id,0,0);g.globalAlpha=.5;for(let i=0;i<900;i++){g.fillStyle=r()<.5?'#6a6a6a':'#a8a8a8';g.beginPath();g.arc(r()*w,r()*h,.6+r()*1.6,0,7);g.fill()}},2,2);
 const skinMap=()=>noiseTex('sm',256,(g,w,h)=>{g.fillStyle='#fff';g.fillRect(0,0,w,h);const r=rng(11);for(let i=0;i<70;i++){const x=r()*w,y=r()*h,rr=18+r()*46,gr=g.createRadialGradient(x,y,0,x,y,rr);const warm=r()<.5;gr.addColorStop(0,warm?'rgba(255,200,190,.22)':'rgba(215,200,175,.2)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h)}},2,2,true);
-const fabricBump=()=>noiseTex('fb',128,(g,w,h)=>{g.fillStyle='#808080';g.fillRect(0,0,w,h);for(let i=0;i<w;i+=2){g.fillStyle=i%4?'#999':'#6a6a6a';g.fillRect(i,0,1,h)}for(let j=0;j<h;j+=2){g.fillStyle=j%4?'#8f8f8f':'#707070';g.fillRect(0,j,w,1)}},9,9);
+const fabricBump=()=>noiseTex('fb',128,(g,w,h)=>{g.fillStyle='#808080';g.fillRect(0,0,w,h);for(let i=0;i<w;i+=2){g.fillStyle=i%4?'#999':'#6a6a6a';g.fillRect(i,0,1,h)}for(let j=0;j<h;j+=2){g.fillStyle=j%4?'#8f8f8f':'#707070';g.fillRect(0,j,w,1)}},5,5);
 const irisTex=col=>noiseTex('ir'+col,128,(g,w)=>{const c=w/2,base=new T.Color(col),hex=a=>'#'+base.clone().multiplyScalar(a).getHexString();
   const gr=g.createRadialGradient(c,c,6,c,c,c);gr.addColorStop(0,hex(1.5));gr.addColorStop(.55,hex(1));gr.addColorStop(.9,hex(.45));gr.addColorStop(1,'#0b0807');g.fillStyle=gr;g.beginPath();g.arc(c,c,c,0,7);g.fill();
   const r=rng(hashStr(String(col)));for(let i=0;i<150;i++){const a=r()*6.283,r0=14+r()*8,r1=r0+16+r()*34;g.strokeStyle=r()<.5?'rgba(255,240,220,.18)':'rgba(0,0,0,.22)';g.lineWidth=.8+r();g.beginPath();g.moveTo(c+Math.cos(a)*r0,c+Math.sin(a)*r0);g.lineTo(c+Math.cos(a)*r1,c+Math.sin(a)*r1);g.stroke()}
@@ -24,9 +24,9 @@ const SP=(r,w,h)=>new T.SphereGeometry(r,w||24,h||16);
 /* sculpted head: tapered jaw, chin, brow ridge, cheekbones, eye sockets. Baked at y=.55 */
 function headGeo(fem){const g=new T.SphereGeometry(1,80,60),p=g.attributes.position;
   for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-    const t=Math.max(0,-(y+.04)),jaw=1-(fem?.38:.3)*Math.pow(t,1.15);
+    const t=Math.max(0,-(y+.04)),jaw=1-(fem?.26:.2)*Math.pow(t,1.15);
     let X=x*.455*jaw,Y=y*.55,Z=z*.5*(1-.1*t);
-    if(y<-.5){const k=(-.5-y)/.5;X*=1-.3*k;Z+=(fem?.03:.05)*k*Math.max(0,z)}
+    if(y<-.5){const k=(-.5-y)/.5;X*=1-.2*k;Z+=(fem?.03:.05)*k*Math.max(0,z)}
     if(y>.12&&y<.42&&z>0)Z+=.02*Math.sin((y-.12)/.3*Math.PI)*z;      // brow ridge
     if(y>-.3&&y<.08&&z>.15)X*=1+.045*(1-Math.abs(y+.1)/.2);          // cheekbones
     const ex=Math.abs(x)-.4,ey=y-.14;if(z>0.5&&ex*ex+ey*ey<.05)Z-=.016*(1-(ex*ex+ey*ey)/.05); // eye sockets
@@ -44,12 +44,12 @@ function clumpInst(geo,mat,n,place,rnd){const im=new T.InstancedMesh(geo,mat,n),
 function build(L,id){
   const rnd=rng(hashStr(id||'x')),fem=!!L.fem,g=new T.Group();
   const sc=new T.Color(L.skin);{const h={};sc.getHSL(h);sc.setHSL(h.h,Math.min(1,h.s*1.1),h.l*.92)}
-  const skin=PM(sc,{map:skinMap(),bumpMap:skinBump(),bumpScale:.02,roughness:.62,sheen:.35,sheenRoughness:.5,sheenColor:new T.Color(0xff9d86),clearcoat:.06,clearcoatRoughness:.6,envMapIntensity:.42});
+  const skin=PM(sc,{map:skinMap(),roughness:.62,sheen:.35,sheenRoughness:.5,sheenColor:new T.Color(0xff9d86),clearcoat:.06,clearcoatRoughness:.6,envMapIntensity:.42});
   const hairC=new T.Color(L.hair||0x333333);
   const hairMat=PM(hairC,{roughness:.55,envMapIntensity:.5,sheen:.5,sheenRoughness:.4,sheenColor:hairC.clone().lerp(new T.Color(0xffffff),.45),metalness:.05});
   const baseHair=SM(hairC.clone().multiplyScalar(.62),.9);
-  const suitM=PM(L.suit,{roughness:.85,bumpMap:fabricBump(),bumpScale:.35,sheen:.6,sheenRoughness:.7,sheenColor:new T.Color(L.suit).lerp(new T.Color(0xffffff),.3)});
-  const shirtM=PM(L.shirt||0xffffff,{roughness:.7,bumpMap:fabricBump(),bumpScale:.2,sheen:.5});
+  const suitM=PM(L.suit,{roughness:.85,bumpMap:fabricBump(),bumpScale:.1,sheen:.6,sheenRoughness:.7,sheenColor:new T.Color(L.suit).lerp(new T.Color(0xffffff),.3)});
+  const shirtM=PM(L.shirt||0xffffff,{roughness:.7,bumpMap:fabricBump(),bumpScale:.06,sheen:.5});
   const body=new T.Group();g.add(body);
   /* torso with natural shoulders */
   const pts=[[0,-1.45],[.58,-1.45],[.8,-1.1],[.9,-.72],[.88,-.5],[.74,-.34],[.5,-.22],[.24,-.12],[0,-.08]].map(v=>new T.Vector2(v[0],v[1]));
@@ -57,7 +57,7 @@ function build(L,id){
   /* shirt front + collar points */
   const sh=new T.Shape();sh.moveTo(-.2,-.14);sh.lineTo(.2,-.14);sh.lineTo(0,-.8);sh.closePath();
   const v=new T.Mesh(new T.ShapeGeometry(sh),L.barong?PM(0xfff1d2,{roughness:.9}):shirtM);v.position.z=.628;body.add(v);
-  const lapM=PM(L.suit,{roughness:.8,bumpMap:fabricBump(),bumpScale:.3});
+  const lapM=PM(L.suit,{roughness:.8,bumpMap:fabricBump(),bumpScale:.08});
   [-1,1].forEach(s=>{const ls=new T.Shape();ls.moveTo(0,0);ls.lineTo(.2*s,.02);ls.lineTo(.27*s,-.2);ls.lineTo(.12*s,-.28);ls.lineTo(.2*s,-.78);ls.lineTo(0,-.7);ls.closePath();
     const lap=new T.Mesh(new T.ExtrudeGeometry(ls,{depth:.03,bevelEnabled:true,bevelSize:.01,bevelThickness:.01,bevelSegments:1}),lapM);lap.position.set(s*.0,-.16,.615);lap.castShadow=true;body.add(lap)});
   if(L.barong){[-1,1].forEach(s=>body.add(mk(new T.BoxGeometry(.025,.95,.015),PM(0xe3cf9c,{roughness:.8}),s*.14,-.62,.634)));body.add(mk(new T.TorusGeometry(.26,.04,8,28,Math.PI),PM(0xfff1d2,{roughness:.9}),0,-.14,.12,1.05,1,1))}
@@ -96,10 +96,10 @@ function build(L,id){
   const eyes=[],lids=[];const irisC=L.eye||(fem?0x3b6a5a:0x5b3d28);
   [-1,1].forEach(s=>{const e=new T.Group();e.position.set(s*.178,.635,.4);
     e.add(mk(SP(.075,28,20),PM(0xf2ece4,{roughness:.2,clearcoat:.6})));
-    const ir=new T.Mesh(new T.CircleGeometry(.04,28),new T.MeshBasicMaterial({map:irisTex(irisC),transparent:true,toneMapped:true}));ir.position.z=.0756;e.add(ir);
+    const ir=new T.Mesh(new T.CircleGeometry(.05,28),new T.MeshBasicMaterial({map:irisTex(irisC),transparent:true,toneMapped:true}));ir.position.z=.0756;e.add(ir);
     e.add(mk(SP(.0775,24,16),PM(0xffffff,{roughness:0,clearcoat:1,clearcoatRoughness:0,transparent:true,opacity:.14})));
     e.add(mk(SP(.011,8,6),new T.MeshBasicMaterial({color:0xffffff}),.022*s*-1+.03,.026,.078));
-    const lid=mk(new T.SphereGeometry(.082,28,14,0,Math.PI*2,0,Math.PI*.5),skin);lid.rotation.x=-.5;e.add(lid);e.userData.lid=lid;
+    const lid=mk(new T.SphereGeometry(.082,28,14,0,Math.PI*2,0,Math.PI*.5),skin);lid.rotation.x=-.22;e.add(lid);e.userData.lid=lid;
     H(e);eyes.push(e);lids.push(lid)});
   /* brows */
   const browC=hairC.clone().lerp(new T.Color(0xd8d2c8),L.hair>0xaaaaaa?0:0);
@@ -110,7 +110,7 @@ function build(L,id){
     [-1,1].forEach(s=>{[0,1].forEach(k=>{const cv=new T.CatmullRomCurve3([new T.Vector3(s*.27,.65-k*.02,.37),new T.Vector3(s*.31,.665-k*.035,.34),new T.Vector3(s*.34,.665-k*.06,.31)]);H(new T.Mesh(new T.TubeGeometry(cv,6,.003,4,false),wm))});
       const nl=new T.CatmullRomCurve3([new T.Vector3(s*.06,.45,.5),new T.Vector3(s*.11,.4,.485),new T.Vector3(s*.13,.34,.47)]);H(new T.Mesh(new T.TubeGeometry(nl,8,.0035,4,false),wm))})}
   /* mouth: lips, corners and inside */
-  const lipC=fem?0xa83a52:0x9c564e,lipM=PM(lipC,{roughness:.5,clearcoat:.12});
+  const lipC=fem?0x8c2f44:0x84483f,lipM=PM(lipC,{roughness:.6,clearcoat:.05,envMapIntensity:.3});
   const mouth=new T.Group();mouth.position.set(0,.372,.452);mouth.rotation.x=.12;
   const inside=mk(SP(.1,16,10),SM(0x2a0c0c,.8),0,-.004,-.012,1,.08,.5);mouth.add(inside);
   const up=new T.Group();[-1,1].forEach(s=>{const u=mk(SP(.06,16,10),lipM,s*.055,.012,.0,1,.36,.5);u.rotation.z=s*-.16;up.add(u)});mouth.add(up);

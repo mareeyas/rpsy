@@ -92,7 +92,7 @@ function stage(el,o){
   function setEnemy(kind,col){if(enemy)root.remove(enemy);if(rival){root.remove(rival);rival=null}const m=R3M.make(kind,col);enemy=m.g;enemy.userData={m,s:enemy.scale.x,kind};enemy.position.set(2.1,-1.46,0);enemy.rotation.y=-.55;root.add(enemy);
     if(!ped2){ped2=pedestal(sc,0xff2a40,-1.46,1.15,true)}ped2.position.x=2.1;ped2.visible=true;mist.visible=true;eLight.intensity=1.3}
   function fit(){const w=el.clientWidth||300,h=el.clientHeight||240;rend.setPixelRatio(Math.min(devicePixelRatio||1,2));rend.setSize(w,h,false);cam.aspect=w/h;
-    if(battle){cam.fov=34;cam.position.set(0,.5,6.9);cam.lookAt(0,.05,0)}else{cam.fov=30;cam.position.set(0,.45,6.6);cam.lookAt(0,-.15,0)}cam.updateProjectionMatrix()}
+    const asp=w/h;if(battle){cam.fov=34;const half=Math.tan(17*Math.PI/180);cam.position.set(0,.5+Math.max(0,(3.5/(half*asp)-6.9))*.06,Math.max(6.9,3.5/(half*asp)));cam.lookAt(0,.05,0)}else{cam.fov=30;const half=Math.tan(15*Math.PI/180);cam.position.set(0,.45,Math.max(6.6,(1.6+Math.abs(o.shift||0))/(half*asp)));cam.lookAt(0,-.15,0)}cam.updateProjectionMatrix()}
   const cv=rend.domElement;cv.style.cssText='width:100%;height:100%;display:block;touch-action:pan-y';el.appendChild(cv);fit();
   cv.addEventListener('webglcontextlost',e=>{e.preventDefault();el.classList.add('nogl');el.dispatchEvent(new CustomEvent('gllost'))});
   const ro=new ResizeObserver(fit);ro.observe(el);
@@ -129,7 +129,7 @@ function stage(el,o){
       U.body.scale.y=1+Math.sin(t*1.8)*.012*k;
       if(!battle){hero.rotation.y+=((rot+tx*.35)-hero.rotation.y)*.08;U.head.rotation.x+=((ty*.18)-U.head.rotation.x)*.1;U.head.rotation.y+=((tx*.3)-U.head.rotation.y)*.1;hero.position.y=-.02+Math.sin(t*1.5)*.02*k;U.eyes.forEach(e=>{e.rotation.y+=((tx*.3-U.head.rotation.y*.5)-e.rotation.y)*.15;e.rotation.x+=((ty*.2)-e.rotation.x)*.15})}
       else{U.head.rotation.y=Math.sin(t*.8)*.1*k-.12;U.eyes.forEach(e=>{e.rotation.y=.3})}
-      blink-=dt;if(blink<0){blink=2+Math.random()*3.5;tween(.2,u=>{const v=Math.sin(u*Math.PI);U.lids.forEach(l=>l.rotation.x=-.5+1.7*v)},()=>U.lids.forEach(l=>l.rotation.x=-.5),1)}
+      blink-=dt;if(blink<0){blink=2+Math.random()*3.5;tween(.2,u=>{const v=Math.sin(u*Math.PI);U.lids.forEach(l=>l.rotation.x=-.22+1.45*v)},()=>U.lids.forEach(l=>l.rotation.x=-.22),1)}
       if(talk>0){talk-=dt;U.mouthSet(.35+Math.abs(Math.sin(t*14))*.6);if(talk<=0)U.mouthSet(0)}
       if(flash>0)flash-=dt}
     if(rival){const U=rival.userData;U.body.scale.y=1+Math.sin(t*1.7+1)*.012*(rm?0:1);U.head.rotation.y=Math.sin(t*.7+1)*.1*(rm?0:1)-.15}

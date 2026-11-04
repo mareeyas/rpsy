@@ -207,7 +207,7 @@ function popup(o,onClose){closePop();const m=document.createElement('div');m.cla
 function closePop(){const m=$('#pop');if(m)m.remove()}
 document.addEventListener('keydown',e=>{if(V!=='quiz'||!S.sess||e.target.tagName==='INPUT')return;const k=e.key;if('1234'.includes(k)&&k.length==1){const b=$$('.opt')[+k-1];if(b&&!b.disabled)b.click()}else if((k==='Enter'||k===' ')&&$('#pop')){e.preventDefault();$('#pop')._done()}else if((k==='Enter'||k===' ')&&$('#nx')){e.preventDefault();$('#nx').click()}});
 function finish(){clearInterval(TM);const z=S.sess;if(!z||z.done)return;z.done=true;const M=MODES[z.type];
-  const n=z.type=='speed'||z.lives<=0&&M.lives?z.ans.filter(x=>x!==undefined).length:z.items.length;const ans=z.items.slice(0,Math.max(n,z.ans.length)),ok=ans.filter((it,k)=>z.ans[k]===0).length,tot=Math.max(ans.length,1),sc=pc(ok,tot);
+  const n=z.type=='speed'||z.lives<=0&&M.lives||(z.story&&z.won)?z.ans.filter(x=>x!==undefined).length:z.items.length;const ans=z.items.slice(0,Math.max(n,z.ans.length)),ok=ans.filter((it,k)=>z.ans[k]===0).length,tot=Math.max(ans.length,1),sc=pc(ok,tot);
   const dead=M.lives&&z.lives<=0&&!z.won,won=z.story?!!z.won:sc>=75;
   S.hist.push({t:td(),s:sc,n:tot,p:S.p,m:z.type});S.hist=S.hist.slice(-60);touch();S.day.g++;
   let bonus=ok>=tot*.75?25:5;const perf=!dead&&ok===tot&&tot>=5;if(perf)bonus+=25;
