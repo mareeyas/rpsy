@@ -6,14 +6,14 @@ const KEY='rpsy3',RANKS=['Novice Observer','Apprentice Listener','Junior Clinici
 const NOTE={r:'Official PRC psychologist exam (Aug 2023 program): Advance Theories of Personality 20%, Psychological Counseling and Psychotherapy 25%, Advance Psychological Assessment 30%, Advance Abnormal Psychology 25%. Confirm the current table of specifications with the PRC Board of Psychology.',g:'Subjects named in RA 9258 Sec. 15 and Board Resolution 02 s.2008: Foundations of Guidance; Counseling Theories, Tools and Techniques; Psychological Testing; Organization and Administration of Guidance Services; Group Process and Program Development. Confirm current weights with the PRC Board for Guidance and Counseling.'};
 const FOES=['Confirmation Bias Blob','Halo Effect Imp','Groupthink Gremlin','Anchoring Slime','Straw-man Sprite','Bystander Beast','Placebo Phantom','Cramming Cyclops','Overconfidence Ogre','Procrastination Pixie'];
 const TIPS=['Say the answer aloud before you flip a card.','Spaced practice beats cramming. Come back tomorrow!','Your mistakes are your best teachers: check the Mistakes tab.','Interleave subjects in a Boss Exam to build real exam stamina.','Explain a concept in your own words. If you can teach it, you know it.'];
-const BADGES=[['first','First Blood','Answer your first question correctly','🎯'],['c5','On Fire','Reach a 5-answer combo','🔥'],['c10','Unstoppable','Reach a 10-answer combo','⚡'],['perf','Flawless','Finish a run of 5+ with no misses','💎'],['s3','Habit','3-day streak','📅'],['s7','Dedicated','7-day streak','🏅'],['q50','Scholar','Answer 50 questions','📚'],['q150','Veteran','Answer 150 questions','🎓'],['f20','Card Shark','Review 20 flashcards','🃏'],['boss','Boss Slayer','Score 75%+ on a Boss Exam of 10+','👑'],['daily','Daily Doer','Complete a Daily Challenge','☀️'],['m80','Master','80%+ mastery in a subject','★'],['spd','Speedster','12+ correct in a Speed Round','🚀'],['hero','Collector','Unlock 5 psychologists','🧑‍🏫']];
+const BADGES=[['first','First Blood','Answer your first question correctly','🎯'],['c5','On Fire','Reach a 5-answer combo','🔥'],['c10','Unstoppable','Reach a 10-answer combo','⚡'],['perf','Flawless','Finish a run of 5+ with no misses','💎'],['s3','Habit','3-day streak','📅'],['s7','Dedicated','7-day streak','🏅'],['q50','Scholar','Answer 50 questions','📚'],['q150','Veteran','Answer 150 questions','🎓'],['f20','Card Shark','Review 20 flashcards','🃏'],['boss','Boss Slayer','Score 75%+ on a Boss Exam of 10+','👑'],['daily','Daily Doer','Complete a Daily Challenge','☀️'],['m80','Master','80%+ mastery in a subject','★'],['spd','Speedster','12+ correct in a Speed Round','🚀'],['hero','Collector','Unlock 5 psychologists','🧑‍🏫'],['pvp','Duelist','Win a live battle against other players','🤺']];
 
 /* ---------- state ---------- */
 const init=()=>({v:3,xp:0,streak:0,last:'',p:'r',hero:'',done:{},fa:{},err:[],cards:{},hist:[],sess:null,les:{},day:{d:'',q:0,f:0,g:0,c:0},badges:{},daily:'',tot:{a:0,c:0,f:0,best:0},set:{snd:1,theme:'auto',fz:1,mo:0}});
 let S=load();
 function load(){const o=init();try{const r=localStorage.getItem(KEY);if(r)Object.assign(o,JSON.parse(r));else{const old=localStorage.getItem('pa');if(old){const x=JSON.parse(old);['xp','streak','last','p','done','fa','err','cards','hist','les'].forEach(k=>{if(x[k]!==undefined)o[k]=x[k]})}}}catch(e){}
   const d=init();o.set=Object.assign(d.set,o.set);o.tot=Object.assign(d.tot,o.tot);o.day=Object.assign(d.day,o.day);if(!o.badges)o.badges={};return o}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.OL)OL.queue()};
 const pad=n=>String(n).padStart(2,'0'),ld=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())},td=()=>ld(Date.now());
 const lvl=()=>Math.floor(Math.sqrt(S.xp/40))+1,pc=(a,b)=>b?Math.round(100*a/b):0,rank=()=>RANKS[Math.min(lvl()-1,RANKS.length-1)];
 const subs=()=>D.filter(s=>s.p.includes(S.p)),core=()=>subs().filter(s=>!s.sup),sub=id=>D.find(x=>x.id===id);
@@ -57,12 +57,12 @@ const portrait=(id,px)=>{const u=R3.portrait(id,px||180);return u?`<img class="p
 let V='home',A=null,TM=0;
 const VIEWS={};
 function go(v,a){killStage();clearInterval(TM);V=v;A=a;render();scrollTo(0,0)}
-function render(){touch();applySet();chrome();save();document.body.classList.toggle('inq',V==='quiz');VIEWS[V]()}
+function render(){touch();applySet();chrome();save();document.body.classList.toggle('inq',V==='quiz'||V==='battle');VIEWS[V]()}
 function applySet(){const h=document.documentElement;if(S.set.theme==='auto')h.removeAttribute('data-theme');else h.setAttribute('data-theme',S.set.theme);h.style.setProperty('--fz',S.set.fz);h.classList.toggle('rm',!!S.set.mo)}
 function chrome(){const L=lvl(),b=40*(L-1)**2,n=40*L*L;
   $('#hd').innerHTML=`<button class="logo" data-v="home" aria-label="Home"><span>Ψ</span><b>RPsy</b></button><div class="chips"><span class="chip" title="Streak">🔥 ${S.streak}</span><span class="chip lvc" title="${rank()}">Lv ${L}<i style="--p:${pc(S.xp-b,n-b)}%"></i></span><button class="ib" data-v="find" aria-label="Search">🔍</button></div>`;
-  const T=[['home','Home','M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],['map','Learn','M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-7a3 3 0 0 0-3 3'],['play','Play','M8 5v14l11-7z'],['cards','Cards','M5 6h12a2 2 0 0 1 2 2v10H7a2 2 0 0 1-2-2zM9 3h12v12'],['me','Me','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0z']];
-  const cur=({sub:'map',find:'map',quiz:'play',res:'play',hero:'me'})[V]||V;
+  const T=[['home','Home','M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],['map','Learn','M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-7a3 3 0 0 0-3 3'],['play','Play','M8 5v14l11-7z'],['rank','Ranks','M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3'],['me','Me','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0z']];
+  const cur=({sub:'map',find:'map',cards:'map',quiz:'play',res:'play',vs:'play',lobby:'play',battle:'play',vsres:'play',hero:'me'})[V]||V;
   $('#tb').innerHTML=T.map(t=>`<button data-v="${t[0]}" class="${t[0]==='play'?'pl':''} ${cur===t[0]?'on':''}" aria-label="${t[1]}" ${cur===t[0]?'aria-current="page"':''}><svg width="24" height="24" viewBox="0 0 24 24" fill="${t[0]==='play'?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="${t[2]}"/></svg><span>${t[1]}</span></button>`).join('')}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b&&!b.disabled){SND.tap();go(b.dataset.v,b.dataset.a)}});
 /* 3D tilt on cards */
@@ -90,11 +90,12 @@ VIEWS.home=function(){
   </div>
   <div class="card"><h3>🎯 Today’s missions</h3>${ms.map(m=>`<div class="ms ${m[0]?'ok':''}"><span class="ck">${m[0]?'✓':''}</span><span>${m[1]}</span><b>${m[2]}</b></div>`).join('')}
    <button class="btn sm ${all3&&!d.c?'gold pulse':'ghost'}" id="cl" ${all3&&!d.c?'':'disabled'}>${d.c?'Reward claimed ✓':all3?'Claim +30 XP':'Complete all to claim +30 XP'}</button></div>
+  ${window.OL&&!OL.user()?`<div class="card tilt row"><div><h3 style="margin:0">🏆 Join the leaderboard</h3><span class="mu">Sign in to keep progress on every device and battle friends.</span></div><button class="btn gold sm" data-v="me">Sign in</button></div>`:''}
   ${next?`<div class="card tilt row"><div><span class="mu">Recommended next</span><h3 style="margin:.1em 0">${next.ic} ${esc(next.n)}</h3></div><button class="btn pri sm" data-v="sub" data-a="${next.id}">Open</button></div>`:''}
   <div class="card ringc">${ring(r.v,'var(--aqua)',r.v+'%')}<div><h3>${S.p=='r'?'RPsy':'RGC'} readiness</h3><p class="mu">${r.cons?'Consistent: your last 3 Boss Exams (10+ items) were all 75%+.':`Needs 3 consistent Boss Exams of 10+ items (${r.mk}/3 so far). It is an estimate, not a prediction.`}</p></div></div>
   <div class="card"><h3>📈 Strongest and weakest</h3><p>${all.length?`Weakest: <b>${esc(all[0][0].n)}</b> (${all[0][1]}%)<br>Strongest: <b>${esc(all.at(-1)[0].n)}</b> (${all.at(-1)[1]}%)`:'Complete a drill to see your mastery profile.'}</p>
   ${lastH.length?`<div class="bars">${lastH.map(x=>`<i title="${x.s}%" style="--h:${Math.max(x.s,4)}%"><em>${x.s}</em></i>`).join('')}</div>`:'<p class="mu">No runs yet. Win your first battle!</p>'}</div>`;
-  mount($('#st'),{mode:'hero',hero:h.id,shift:.85,accent:0x7c5cff});
+  mount($('#st'),{mode:'hero',hero:h.id,shift:.6,accent:0x7c5cff});
   if(ST&&ST.wave)setTimeout(()=>ST&&ST.wave(),500);
   const bub=$('#bub'),say=()=>{tipI++;bub.textContent=tipI%2?TIPS[(tipI>>1)%TIPS.length]:h.bio;bub.classList.remove('pop');void bub.offsetWidth;bub.classList.add('pop');if(ST){ST.wave();}SND.tap()};
   $('#st').addEventListener('tap3d',say);
@@ -107,6 +108,7 @@ VIEWS.home=function(){
 VIEWS.map=function(){const L=subs();
   $('#app').innerHTML=`<h1>${S.p=='r'?'RPsy':'RGC'} quest map</h1>
   <div class="seg"><button class="${S.p=='r'?'on':''}" data-p="r">Psychologist (RPsy)</button><button class="${S.p=='g'?'on':''}" data-p="g">Guidance Counselor (RGC)</button></div>
+  <button class="btn ghost wide" data-v="cards">🃏 Flashcards &amp; mistakes (${dueCards().length} due)</button>
   <details class="how"><summary>Exam structure and how unlocking works</summary><p class="mu">${NOTE[S.p]}</p><p class="mu">Score 60%+ over 2+ answered questions in a quest to open the next exam subject. Supporting topics are always open.</p></details>
   <div class="path">${L.map((s,i)=>{const m=mast(s),u=unlocked(s);return `<button class="pnode tilt ${u?'':'lk'} ${m>=80?'mx':''}" ${u?'':'disabled'} data-v="sub" data-a="${s.id}" style="--c:${s.col};--p:${m||0}%"><span class="coin"><i>${u?s.ic:'🔒'}</i></span><span class="nt"><b>${m>=80?'★ ':''}${esc(s.n)}</b><small>${m===null?'Not started':'Mastery '+m+'%'} · ${s.q.length} questions${s.sup?' · supporting':s.p.length>1?' · shared':''}</small><span class="pbar"><i style="width:${m||0}%"></i></span></span></button>`}).join('')}</div>`;
   $$('[data-p]').forEach(b=>b.onclick=()=>{S.p=b.dataset.p;save();SND.tap();render()});
@@ -135,6 +137,7 @@ VIEWS.play=function(){const tot=totalQ(),L=subs();
    <button class="mode tilt m2" id="m2"><span class="mi">🚀</span><b>Speed Round</b><small>60 seconds. Build a combo!</small></button>
    <button class="mode tilt m3" id="m3"><span class="mi">☀️</span><b>Daily Challenge</b><small>${S.daily===td()?'Done today ✓ (replay)':'10 questions · +50 XP'}</small></button>
    <button class="mode tilt m4" id="m4"><span class="mi">👑</span><b>Boss Exam</b><small>Timed mock exam, feedback at the end</small></button>
+   <button class="mode tilt m6" id="m6"><span class="mi">🤺</span><b>Battle Friends</b><small>Live 2–4 player duel · hit points · rankings</small></button>
    <button class="mode tilt m5" id="m5"><span class="mi">🩹</span><b>Weak Spots</b><small>${S.err.length} saved mistakes to retry</small></button>
   </div>
   <h2>Subject drills</h2><div class="chipsrow">${L.map(s=>`<button class="sc" style="--c:${s.col}" data-v="sub" data-a="${s.id}">${s.ic} ${esc(s.n.replace('Advance ','').replace('Law & Ethics: ','Ethics: '))}</button>`).join('')}</div>
@@ -142,6 +145,7 @@ VIEWS.play=function(){const tot=totalQ(),L=subs();
   $('#m1').onclick=()=>start('battle',L,8,{boss:1});$('#m2').onclick=()=>start('speed',L,300);$('#m3').onclick=startDaily;
   $('#m4').onclick=()=>{$('#bx').hidden=false;$('#bx').scrollIntoView({behavior:'smooth',block:'center'})};
   $$('[data-n]').forEach(b=>b.onclick=()=>start('mock',L,+b.dataset.n));
+  $('#m6').onclick=()=>go('vs');
   $('#m5').onclick=()=>{if(!S.err.length)return toast('No saved mistakes yet. Nice!','✨');startWeak()};
 };
 function startDaily(){const L=subs(),t=td();let items=[];L.forEach(s=>s.q.forEach((q,i)=>items.push({s:s.id,i})));items=seeded(items,t+S.p).slice(0,10);start('daily',null,0,{boss:1,items})}
@@ -244,7 +248,7 @@ VIEWS.hero=function(){const first=A&&A.first,sel=S.hero||R3.ROSTER[0].id;let cur
 /* ---------- ME ---------- */
 VIEWS.me=function(){const L=lvl(),b=40*(L-1)**2,n=40*L*L,h=hero(),r=readiness();
   const nb=Object.keys(S.badges).length;
-  $('#app').innerHTML=`<div class="card prof"><div class="avt">${portrait(h.id,160)}</div><div><h2 style="margin:0">${esc(h.n)}</h2><span class="mu">${rank()} · Lv ${L}</span><div class="xp" style="margin-top:8px"><i style="width:${pc(S.xp-b,n-b)}%"></i></div><small class="mu">${S.xp} XP · ${n-S.xp} to next level</small></div></div>
+  $('#app').innerHTML=`${window.OL?OL.card():''}<div class="card prof"><div class="avt">${portrait(h.id,160)}</div><div><h2 style="margin:0">${esc(h.n)}</h2><span class="mu">${rank()} · Lv ${L}</span><div class="xp" style="margin-top:8px"><i style="width:${pc(S.xp-b,n-b)}%"></i></div><small class="mu">${S.xp} XP · ${n-S.xp} to next level</small></div></div>
   <div class="stats"><div><b>${S.streak}</b><small>day streak</small></div><div><b>${S.tot.a}</b><small>answered</small></div><div><b>${pc(S.tot.c,S.tot.a)}%</b><small>accuracy</small></div><div><b>${S.tot.best}</b><small>best combo</small></div></div>
   <button class="btn pri wide" data-v="hero">🧑‍🏫 Change psychologist (${unlockedHeroes().length}/${R3.ROSTER.length} unlocked)</button>
   <h2>Mastery</h2><div class="card">${subs().map(s=>{const m=mast(s);return `<div class="mrow"><span>${s.ic} ${esc(s.n)}</span><span class="pbar" style="--c:${s.col}"><i style="width:${m||0}%"></i></span><b>${m===null?'–':m+'%'}</b></div>`}).join('')}</div>
@@ -255,7 +259,9 @@ VIEWS.me=function(){const L=lvl(),b=40*(L-1)**2,n=40*L*L,h=hero(),r=readiness();
    <label><span>Theme</span><select id="s3" class="inp"><option value="auto">Match device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
    <label><span>Text size</span><input type="range" id="s4" min=".9" max="1.3" step=".05" value="${S.set.fz}"></label>
    <button class="btn ghost" id="s5">Reset all progress</button></div>
-  <p class="mu">${S.p=='r'?'RPsy':'RGC'} readiness estimate: ${r.v}%. It needs consistent Boss Exam results and is not a prediction.</p>`;
+  <p class="mu">${S.p=='r'?'RPsy':'RGC'} readiness estimate: ${r.v}%. It needs consistent Boss Exam results and is not a prediction.</p>
+  <details class="how"><summary>About this app</summary><p class="mu">All questions are original practice items written for this app (simulated, not actual or leaked board questions). Simulated scores do not predict or guarantee actual PRC results. Law facts and exam structure were checked against PRC and Philippine statute sources on Nov 3, 2026; clinical content follows standard textbooks and is not individually cited. Cross-check with your textbooks and the current PRC table of specifications before relying on any item. Character avatars are stylized 3D illustrations, not portraits.</p></details>`;
+  if(window.OL)OL.bind();
   $('#s3').value=S.set.theme;
   $('#s1').onchange=e=>{S.set.snd=+e.target.checked;save();SND.tap()};$('#s2').onchange=e=>{S.set.mo=+e.target.checked;save();applySet()};$('#s3').onchange=e=>{S.set.theme=e.target.value;save();applySet()};$('#s4').oninput=e=>{S.set.fz=+e.target.value;save();applySet()};
   $('#s5').onclick=()=>{if(confirm('Erase all RPsy progress on this device?')){S=init();save();go('home')}}};

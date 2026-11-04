@@ -37,7 +37,13 @@ function person(L){
   if(L.tie==='scarf'){const s=mesh(new T.TorusGeometry(.33,.09,12,32),M(L.tc,.9),0,-.2,0);s.rotation.x=Math.PI/2;s.scale.set(1.08,1,1);body.add(s);body.add(mesh(new T.BoxGeometry(.14,.5,.06),M(L.tc,.9),.12,-.5,.62))}
   if(L.fem){const n=mesh(new T.TorusGeometry(.27,.014,8,40),M(L.acc,.2,.9),0,-.22,.1);n.rotation.x=Math.PI/2.4;body.add(n)}
   // arms
-  const arms=[];[-1,1].forEach(s=>{const a=new T.Group();a.position.set(s*.92,-.42,0);const up=mesh(new T.CapsuleGeometry(.19,.78,6,14),suit,0,-.46,0);const cuff=mesh(new T.CylinderGeometry(.17,.17,.08,16),shirt,0,-.95,0);const hand=mesh(SP(.17,18,14),skin,0,-1.08,.02);hand.scale.set(1,1.15,.8);a.add(up,cuff,hand);a.rotation.z=s*.09;body.add(a);arms.push(a)});
+  const arms=[];[-1,1].forEach(s=>{const a=new T.Group();a.position.set(s*.92,-.42,0);
+    a.add(mesh(new T.CapsuleGeometry(.19,.28,6,14),suit,0,-.27,0));
+    const el=new T.Group();el.position.y=-.5;
+    el.add(mesh(SP(.185,16,12),suit,0,0,0));el.add(mesh(new T.CapsuleGeometry(.165,.26,6,14),suit,0,-.25,0));
+    el.add(mesh(new T.CylinderGeometry(.15,.15,.07,16),shirt,0,-.46,0));
+    const hand=mesh(SP(.16,18,14),skin,0,-.58,.02);hand.scale.set(.9,1.15,.7);el.add(hand);
+    a.add(el);a.userData.el=el;a.rotation.z=s*.09;el.rotation.z=s*.1;el.rotation.x=-.18;body.add(a);arms.push(a)});
   // neck
   body.add(mesh(new T.CylinderGeometry(.2,.24,.28,20),skin,0,-.05,0));
   // head group
@@ -113,6 +119,7 @@ function motes(sc,col){
   const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(p,3));
   const pts=new T.Points(geo,new T.PointsMaterial({color:col,size:.07,transparent:true,opacity:.8,depthWrite:false,blending:T.AdditiveBlending}));sc.add(pts);return pts;
 }
+function tint(g,sec){g.traverse(m=>{if(m.isMesh&&m.material.emissive)m.material.emissive.setRGB(.7,0,0)});setTimeout(()=>g.traverse(m=>{if(m.isMesh&&m.material.emissive&&!m.material.userData.keep)m.material.emissive.setRGB(0,0,0)}),sec*1000)}
 const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
 const reduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
 
@@ -123,7 +130,7 @@ function stage(el,o){
   const battle=o.mode==='battle';
   lights(sc,o.accent);const ped=pedestal(sc,o.accent||0x7c5cff,-1.46,battle?.9:1.2);
   const mt=motes(sc,0xb9a6ff);
-  let hero=null,heroId=null,enemy=null,ped2=null,drag=0,rot=0,tx=0,ty=0,alive=true,tw=[],t0=0,blink=0,talk=0,flash=0;
+  let hero=null,heroId=null,enemy=null,rival=null,ped2=null,drag=0,rot=0,tx=0,ty=0,alive=true,tw=[],t0=0,blink=0,talk=0,flash=0;
   const root=new T.Group();sc.add(root);
   function setHero(id){if(hero)root.remove(hero);heroId=id;hero=person(byId[id].L);root.add(hero);
     if(battle){hero.scale.setScalar(.74);hero.position.set(-2.0,-1.46+1.45*.74,0);hero.rotation.y=.55;ped.position.set(-2.0,0,0)}
@@ -140,10 +147,19 @@ function stage(el,o){
   function tween(dur,fn,done,hr){tw.push({t:0,d:dur,fn,done,hero:hr})}
   const api={
     setHero,setEnemy,get id(){return heroId},
-    wave(){if(!hero)return;const a=hero.userData.arms[1];tween(1.1,u=>{a.rotation.z=-.09-Math.sin(u*Math.PI)*2.6+Math.sin(u*28)*.12*Math.sin(u*Math.PI)},()=>a.rotation.z=-.09*-1,1)},
-    cheer(){if(!hero)return;const y0=hero.position.y,b=hero.scale.x;hero.userData.arms.forEach((a,i)=>{const s=i?-1:1;tween(1.1,u=>a.rotation.z=s*(.09+Math.sin(u*Math.PI)*2.7),()=>a.rotation.z=s*.09,1)});tween(.9,u=>{hero.position.y=y0+Math.abs(Math.sin(u*Math.PI*2))*.35;if(!battle)hero.rotation.y=rot+u*Math.PI*2},()=>{hero.position.y=y0},1);talk=1.2},
+    wave(){if(!hero||hero.userData.busy)return;const U=hero.userData,a=U.arms[0],el=a.userData.el,s=-1,env=u=>u<.2?ease(u/.2):u>.8?ease((1-u)/.2):1;U.busy=1;talk=1.6;
+      tween(2.1,u=>{const e=env(u);a.rotation.z=s*(.09+e*1.45);el.rotation.z=s*(.1+e*(1.2+Math.sin(u*Math.PI*2*3.4)*.3));el.rotation.x=-.18*(1-e);U.body.rotation.z=-s*.025*e;U.head.rotation.z=-s*.07*e},
+        ()=>{a.rotation.z=s*.09;el.rotation.z=s*.1;el.rotation.x=-.18;U.body.rotation.z=0;U.head.rotation.z=0;U.busy=0},1)},
+    cheer(who){const G=who==='rival'?rival:hero;if(!G)return;const U=G.userData,y0=G.position.y,env=u=>u<.2?ease(u/.2):u>.75?ease((1-u)/.25):1;if(U.busy)return;U.busy=1;if(G===hero)talk=1.4;
+      tween(1.3,u=>{const e=env(u);U.arms.forEach((a,i)=>{const s=i?1:-1,el=a.userData.el;a.rotation.z=s*(.09+e*2.45);el.rotation.z=s*(.1+e*.3+Math.sin(u*Math.PI*6)*.12*e);el.rotation.x=-.18*(1-e)});G.position.y=y0+Math.abs(Math.sin(u*Math.PI*2))*.12;U.head.rotation.z=Math.sin(u*Math.PI*4)*.05*e},
+        ()=>{U.arms.forEach((a,i)=>{const s=i?1:-1;a.rotation.z=s*.09;a.userData.el.rotation.z=s*.1;a.userData.el.rotation.x=-.18});G.position.y=y0;U.head.rotation.z=0;U.busy=0},1)},
+    setRival(id){if(rival)root.remove(rival);if(enemy)enemy.visible=false;rival=person((byId[id]||ROSTER[0]).L);rival.scale.setScalar(.74);rival.position.set(2.0,-1.46+1.45*.74,0);rival.rotation.y=-.55;root.add(rival);if(!ped2){ped2=pedestal(sc,0xff7a59,-1.46,.9)}ped2.position.x=2.0;rival.userData.id=id},
+    get rivalId(){return rival&&rival.userData.id},
+    rivalHit(){if(!rival)return;const x0=rival.position.x;tint(rival,.5);tween(.5,u=>{rival.position.x=x0+Math.sin(u*Math.PI*6)*.12*(1-u)},()=>rival.position.x=x0,1)},
+    rivalAttack(hit){if(!rival||!hero)return;const x0=rival.position.x,pj=bulb(0xff7a59);pj.position.set(x0-.5,.2,.4);root.add(pj);const tx=hero.position.x+.5;
+      tween(.75,u=>{const v=ease(u);pj.position.x=x0-.5+(tx-x0+.5)*v;pj.position.y=.2+Math.sin(v*Math.PI)*.8;pj.rotation.y=u*9;rival.position.x=x0-Math.sin(Math.min(u*2,1)*Math.PI)*.35},()=>{root.remove(pj);rival.position.x=x0;if(hit)hit()},1)},
     hurt(){if(!hero)return;const x0=hero.position.x;tween(.5,u=>{hero.position.x=x0+Math.sin(u*Math.PI*6)*.12*(1-u)},()=>hero.position.x=x0,1);flash=.6},
-    attack(hit){if(!hero)return;const ex=enemy&&enemy.visible?enemy.position.x:hero.position.x+3.6;const x0=hero.position.x,pj=bulb(0xffd45e);pj.position.set(x0+.5,.2,.4);root.add(pj);
+    attack(hit){if(!hero)return;const ex=rival?rival.position.x:enemy&&enemy.visible?enemy.position.x:hero.position.x+3.6;const x0=hero.position.x,pj=bulb(0xffd45e);pj.position.set(x0+.5,.2,.4);root.add(pj);
       tween(.75,u=>{const v=ease(u);pj.position.x=x0+.5+(ex-x0-.5)*v;pj.position.y=.2+Math.sin(v*Math.PI)*.8;pj.rotation.y=u*9;hero.position.x=x0+Math.sin(Math.min(u*2,1)*Math.PI)*.35},()=>{root.remove(pj);hero.position.x=x0;if(hit)hit()},1)},
     enemyHit(hp){if(!enemy)return;enemy.userData.hp=hp;const s=enemy.scale.x;tween(.5,u=>{enemy.scale.set(s*(1+Math.sin(u*Math.PI)*.18),s*(1-Math.sin(u*Math.PI)*.22),s);enemy.userData.body.material.emissiveIntensity=.08+Math.sin(u*Math.PI)*1.2},()=>{enemy.scale.setScalar(s);enemy.userData.body.material.emissiveIntensity=.08});},
     enemyAttack(done){if(!enemy)return;const x0=enemy.position.x;tween(.7,u=>{enemy.position.x=x0-Math.sin(Math.min(u*1.4,1)*Math.PI)*3.5;enemy.rotation.z=Math.sin(u*Math.PI)*.4},()=>{enemy.position.x=x0;enemy.rotation.z=0},0);setTimeout(()=>{api.hurt();done&&done()},330)},
@@ -161,6 +177,7 @@ function stage(el,o){
       blink-=dt;if(blink<0){blink=2+Math.random()*3;tween(.16,u=>{const s=1-Math.sin(u*Math.PI)*.92;U.eyes.forEach(e=>e.scale.y=s)},()=>U.eyes.forEach(e=>e.scale.y=1),1)}
       if(talk>0){talk-=dt;U.mouth.scale.y=.8+Math.abs(Math.sin(t*16))*.9;if(talk<=0)U.mouth.scale.y=.8}
       if(flash>0){flash-=dt;hero.traverse(m=>{if(m.isMesh&&m.material.emissive)m.material.emissive.setRGB(flash,0,0)})}else if(flash<=0&&flash>-1){flash=-2;hero.traverse(m=>{if(m.isMesh&&m.material.emissive&&!m.material.userData.keep)m.material.emissive.setRGB(0,0,0)})}}
+    if(rival){const U=rival.userData;U.body.scale.y=1+Math.sin(t*1.7+1)*.012*(rm?0:1);U.head.rotation.y=Math.sin(t*.7+1)*.1*(rm?0:1)}
     if(enemy&&enemy.visible){enemy.position.y+=0;const U=enemy.userData;U.mouth.scale.y=.55+Math.abs(Math.sin(t*3))*.12*(rm?0:1)}
     if(enemy&&enemy.visible&&!tw.length){enemy.position.y=-1.46+Math.abs(Math.sin(t*2.2))*.08*(rm?0:1)}
     ped.userData.ring.rotation.z=t*.4;mt.rotation.y=t*.03;const pa=mt.geometry.attributes.position;if(!rm){for(let i=0;i<pa.count;i++){let y=pa.getY(i)+dt*.18;if(y>3.5)y=-1.5;pa.setY(i,y)}pa.needsUpdate=true}
