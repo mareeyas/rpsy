@@ -1,7 +1,7 @@
 /* RPsy: bold, glossy, 3D-flavored theme. Dark by default, light via device or Settings. */
-:root{--bg:#0e0a2b;--bg2:#1a1250;--sf:rgba(255,255,255,.07);--sf2:rgba(255,255,255,.12);--bd:rgba(255,255,255,.14);--ink:#f6f3ff;--mu:#b9b1e6;--pri:#7c5cff;--pri-d:#3d23b8;--aqua:#2fe3c8;--aqua-d:#0f8f7e;--gold:#ffc83d;--gold-d:#c98a0c;--pink:#ff5fa2;--ok:#2fd08a;--ok-d:#13804f;--no:#ff5a6a;--no-d:#a8212f;--sh:0 22px 44px -22px #000c;--fz:1;--tbbg:rgba(20,14,60,.78)}
-:root[data-theme=light]{--bg:#f3efff;--bg2:#e2d9ff;--sf:#ffffff;--sf2:#f3eeff;--bd:#d9ceff;--ink:#1b1446;--mu:#5b5388;--pri:#6a47f5;--pri-d:#3a22b0;--aqua:#12c6ab;--aqua-d:#0a8573;--gold:#ffb81f;--gold-d:#c27f00;--sh:0 20px 34px -22px #4a2fd155;--tbbg:rgba(255,255,255,.85)}
-@media(prefers-color-scheme:light){:root:not([data-theme]){--bg:#f3efff;--bg2:#e2d9ff;--sf:#ffffff;--sf2:#f3eeff;--bd:#d9ceff;--ink:#1b1446;--mu:#5b5388;--pri:#6a47f5;--pri-d:#3a22b0;--aqua:#12c6ab;--aqua-d:#0a8573;--gold:#ffb81f;--gold-d:#c27f00;--sh:0 20px 34px -22px #4a2fd155;--tbbg:rgba(255,255,255,.85)}}
+:root{color-scheme:dark;--bg:#0e0a2b;--bg2:#1a1250;--sf:rgba(255,255,255,.07);--sf2:rgba(255,255,255,.12);--bd:rgba(255,255,255,.14);--ink:#f6f3ff;--mu:#b9b1e6;--pri:#7c5cff;--pri-d:#3d23b8;--aqua:#2fe3c8;--aqua-d:#0f8f7e;--gold:#ffc83d;--gold-d:#c98a0c;--pink:#ff5fa2;--ok:#2fd08a;--ok-d:#13804f;--no:#ff5a6a;--no-d:#a8212f;--sh:0 22px 44px -22px #000c;--fz:1;--tbbg:rgba(20,14,60,.78)}
+:root[data-theme=light]{color-scheme:light;--bg:#f3efff;--bg2:#e2d9ff;--sf:#ffffff;--sf2:#f3eeff;--bd:#d9ceff;--ink:#1b1446;--mu:#5b5388;--pri:#6a47f5;--pri-d:#3a22b0;--aqua:#12c6ab;--aqua-d:#0a8573;--gold:#ffb81f;--gold-d:#c27f00;--sh:0 20px 34px -22px #4a2fd155;--tbbg:rgba(255,255,255,.85)}
+@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f3efff;--bg2:#e2d9ff;--sf:#ffffff;--sf2:#f3eeff;--bd:#d9ceff;--ink:#1b1446;--mu:#5b5388;--pri:#6a47f5;--pri-d:#3a22b0;--aqua:#12c6ab;--aqua-d:#0a8573;--gold:#ffb81f;--gold-d:#c27f00;--sh:0 20px 34px -22px #4a2fd155;--tbbg:rgba(255,255,255,.85)}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0}
 body{background:radial-gradient(900px 500px at 100% -10%,#7c5cff33,transparent 60%),radial-gradient(700px 500px at -10% 20%,#2fe3c822,transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));background-attachment:fixed;color:var(--ink);font:600 calc(16px*var(--fz))/1.5 Nunito,system-ui,-apple-system,'Segoe UI',sans-serif;max-width:680px;margin:auto;padding:0 16px 130px;min-height:100vh;overflow-x:hidden}
 h1,h2,h3,.big,.logo b,.btn,.stars,.tm{font-family:Fredoka,Nunito,system-ui,sans-serif}
@@ -161,3 +161,25 @@ body.inq{padding:0 12px;height:100dvh;overflow:hidden}body.inq #hd{display:none}
 .fit.lobfit{overflow-y:auto;gap:8px}.lobfit .lob{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}.lobfit .lp{min-width:0}.lobfit .lp>b,.lobfit .lp>small{min-width:0}.lobfit .lp small{display:block}.lobfit .card{margin:0}.lobfit .lact{margin-top:auto}.lobfit #lx{align-self:flex-start;flex:none}
 .lobfit .qsel{margin:0}
 @media(max-height:700px){.chint{display:none}}
+
+/* journey: map, chapters, story scenes, side quests */
+.jhero{display:flex;gap:14px;align-items:center}.jhero .avt{width:72px;flex:none}.jhero p{font-size:.95rem}
+.pnode .nt small{display:block}
+.sqs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sq{all:unset;cursor:pointer;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:18px;background:var(--sf2);border:2px solid var(--bd);box-shadow:0 4px 0 var(--bd);font-size:1.5rem}.sq b{font:600 .78rem/1.15 Fredoka,sans-serif}.sq small{font-size:.7rem}.sq:active{transform:translateY(3px);box-shadow:0 1px 0 var(--bd)}.sq:focus-visible{outline:3px solid var(--aqua)}
+.lib{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stages{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.stn{all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:linear-gradient(160deg,var(--sf2),var(--sf));border:2px solid var(--bd);box-shadow:0 5px 0 var(--bd)}.stn:focus-visible{outline:3px solid var(--aqua)}
+.stn .si{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.5rem;background:var(--pri);box-shadow:0 3px 0 var(--pri-d)}
+.stn.dn{border-color:var(--ok);box-shadow:0 5px 0 var(--ok-d)}.stn.dn .si{background:var(--ok);box-shadow:0 3px 0 var(--ok-d)}
+.stn.bossn{border-color:var(--no);box-shadow:0 5px 0 var(--no-d)}.stn.bossn .si{background:linear-gradient(180deg,#ff5a6a,#a8212f);box-shadow:0 3px 0 var(--no-d)}
+.stn.lk{opacity:.5;filter:grayscale(.6)}.stn .nt{flex:1;min-width:0}.stn .nt b{display:block;font:600 1rem Fredoka,sans-serif}.stv{font:700 1rem Fredoka,sans-serif;color:var(--gold);letter-spacing:.1em}
+.fit.scene .stage3{flex:1 1 0;height:auto;min-height:150px;max-height:52dvh}
+.chp{position:absolute;z-index:3;left:12px;top:12px;background:color-mix(in srgb,var(--c) 70%,#000);color:#fff;border-radius:999px;padding:4px 12px;font:600 .85rem Fredoka,sans-serif}
+.dlg{flex:none;background:linear-gradient(160deg,var(--sf2),var(--sf));border:2px solid var(--bd);border-radius:24px;padding:14px 16px;box-shadow:var(--sh)}
+.spk{font:600 1rem Fredoka,sans-serif;color:var(--gold)}.spk.mon{color:#ff5a6a}.dlg p{min-height:4.4em;margin:6px 0 10px;font-size:1.05rem;line-height:1.4}
+.stage3.nogl.hasfoe::before{content:"👹";position:absolute;right:14%;bottom:12%;font-size:4rem;z-index:1}.stage3.nogl.hasfoe::after{place-items:center start;padding-left:14%}
+
+.fside.ffr div{font-size:1.2rem}.fside.ffr div.long{font-size:1rem;line-height:1.35}.fbk .term{font:700 1.5rem/1.2 Fredoka,sans-serif;color:#2d1a9c}
+.ff{font-size:.8rem!important;font-family:Nunito,sans-serif!important;font-weight:700;line-height:1.3;overflow:auto}.fb b{font:700 1rem Fredoka,sans-serif}
+.ffr small{color:#fff;opacity:.85}
+.kf{margin:6px 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:6px}.kf li{line-height:1.4}

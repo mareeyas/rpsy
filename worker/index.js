@@ -6,7 +6,7 @@ const unhex=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
 const CORS={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'GET,POST,PUT,OPTIONS'};
 const json=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{'content-type':'application/json','cache-control':'no-store',...CORS}});
 const fail=(m,s=400)=>json({error:m},s);
-const HEROES=['freud','anna','rogers','jung','adler','maslow','skinner','piaget','erikson','bandura','beck','enriquez'];
+const HEROES=['freud','anna','rogers','jung','adler','maslow','skinner','piaget','erikson','bandura','beck','enriquez','may','horney','james','allport','pavlov','vygotsky','binet','wundt','watson','ellis','ainsworth','frankl','kohlberg'];
 
 const SCHEMA=[
  `CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT UNIQUE NOT NULL,pw TEXT NOT NULL,salt TEXT NOT NULL,hero TEXT DEFAULT '',xp INTEGER DEFAULT 0,streak INTEGER DEFAULT 0,wins INTEGER DEFAULT 0,battles INTEGER DEFAULT 0,wk TEXT DEFAULT '',wxp INTEGER DEFAULT 0,created INTEGER,seen INTEGER)`,
