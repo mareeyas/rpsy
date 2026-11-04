@@ -182,3 +182,4 @@ body.inq{padding:0 12px;height:100dvh;overflow:hidden}body.inq #hd{display:none}
 .fside.ffr div{font-size:1.2rem}.fside.ffr div.long{font-size:1rem;line-height:1.35}.fbk .term{font:700 1.5rem/1.2 Fredoka,sans-serif;color:#2d1a9c}
 .ff{font-size:.8rem!important;font-family:Nunito,sans-serif!important;font-weight:700;line-height:1.3;overflow:auto}.fb b{font:700 1rem Fredoka,sans-serif}
 .ffr small{color:#fff;opacity:.85}
+.kf{margin:6px 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:6px}.kf li{line-height:1.4}

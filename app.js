@@ -4,9 +4,9 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const RGC=false; /* guidance-counselor path is built later; RPsy only for now */
 const KEY='rpsy3',RANKS=['Novice Observer','Apprentice Listener','Junior Clinician','Case Analyst','Seasoned Practitioner','Master Mentor','Grand Sage'];
-const NOTE={r:'Official PRC psychologist exam (Aug 2023 program): Advance Theories of Personality 20%, Psychological Counseling and Psychotherapy 25%, Advance Psychological Assessment 30%, Advance Abnormal Psychology 25%. Confirm the current table of specifications with the PRC Board of Psychology.',g:'Subjects named in RA 9258 Sec. 15 and Board Resolution 02 s.2008: Foundations of Guidance; Counseling Theories, Tools and Techniques; Psychological Testing; Organization and Administration of Guidance Services; Group Process and Program Development. Confirm current weights with the PRC Board for Guidance and Counseling.'};
+const NOTE={r:'PRC psychologist exam (August 2023 program): Advance Theories of Personality 20%, Psychological Counseling and Psychotherapy 25%, Advance Psychological Assessment 30%, Advance Abnormal Psychology 25%. Check the current table of specifications with the PRC Board of Psychology.',g:'Subjects named in RA 9258 Sec. 15 and Board Resolution 02 s.2008: Foundations of Guidance; Counseling Theories, Tools and Techniques; Psychological Testing; Organization and Administration of Guidance Services; Group Process and Program Development. Confirm current weights with the PRC Board for Guidance and Counseling.'};
 const FOES=['Confirmation Bias Blob','Halo Effect Imp','Groupthink Gremlin','Anchoring Slime','Straw-man Sprite','Bystander Beast','Placebo Phantom','Cramming Cyclops','Overconfidence Ogre','Procrastination Pixie'];
-const TIPS=['Say the answer aloud before you flip a card.','Spaced practice beats cramming. Come back tomorrow!','Your mistakes are your best teachers: check the Mistakes tab.','Interleave subjects in a Boss Exam to build real exam stamina.','Explain a concept in your own words. If you can teach it, you know it.'];
+const TIPS=['Say the term aloud before you flip a card.','Spaced practice beats cramming. Come back tomorrow!','Your mistakes are your best teachers. Check the Mistakes tab.','Mix subjects in a Boss Exam to build stamina for the real exam.','Explain a concept in your own words. If you can teach it, you know it.'];
 const BADGES=[['first','First Blood','Answer your first question correctly','🎯'],['c5','On Fire','Reach a 5-answer combo','🔥'],['c10','Unstoppable','Reach a 10-answer combo','⚡'],['perf','Flawless','Finish a run of 5+ with no misses','💎'],['s3','Habit','3-day streak','📅'],['s7','Dedicated','7-day streak','🏅'],['q50','Scholar','Answer 50 questions','📚'],['q150','Veteran','Answer 150 questions','🎓'],['f20','Card Shark','Review 20 flashcards','🃏'],['boss','Boss Slayer','Score 75%+ on a Boss Exam of 10+','👑'],['daily','Daily Doer','Complete a Daily Challenge','☀️'],['m80','Master','80%+ mastery in a subject','★'],['spd','Speedster','12+ correct in a Speed Round','🚀'],['hero','Collector','Unlock 5 psychologists','🧑‍🏫'],['pvp','Duelist','Win a live battle against other players','🤺'],['ch1','Chapter One','Finish the first chapter of the journey','📖'],['story','Citadel Conqueror','Finish the whole journey to licensure','🏰']];
 
 /* ---------- state ---------- */
@@ -97,7 +97,7 @@ VIEWS.home=function(){
   <div class="card"><h3>🎯 Today’s missions</h3>${ms.map(m=>`<div class="ms ${m[0]?'ok':''}"><span class="ck">${m[0]?'✓':''}</span><span>${m[1]}</span><b>${m[2]}</b></div>`).join('')}
    <button class="btn sm ${all3&&!d.c?'gold pulse':'ghost'}" id="cl" ${all3&&!d.c?'':'disabled'}>${d.c?'Reward claimed ✓':all3?'Claim +30 XP':'Complete all to claim +30 XP'}</button></div>
   ${window.OL&&!OL.user()?`<div class="card tilt row"><div><h3 style="margin:0">🏆 Join the leaderboard</h3><span class="mu">Sign in to keep progress on every device and battle friends.</span></div><button class="btn gold sm" data-v="me">Sign in</button></div>`:''}
-  <div class="card ringc">${ring(r.v,'var(--aqua)',r.v+'%')}<div><h3>${S.p=='r'?'RPsy':'RGC'} readiness</h3><p class="mu">${r.cons?'Consistent: your last 3 Boss Exams (10+ items) were all 75%+.':`Needs 3 consistent Boss Exams of 10+ items (${r.mk}/3 so far). It is an estimate, not a prediction.`}</p></div></div>
+  <div class="card ringc">${ring(r.v,'var(--aqua)',r.v+'%')}<div><h3>${S.p=='r'?'RPsy':'RGC'} readiness</h3><p class="mu">${r.cons?'Your last 3 Boss Exams (10+ questions each) all scored 75% or higher.':`Take 3 Boss Exams with 10+ questions to get a steady score (${r.mk}/3 so far). This is an estimate, not a prediction.`}</p></div></div>
   <div class="card"><h3>📈 Strongest and weakest</h3><p>${all.length?`Weakest: <b>${esc(all[0][0].n)}</b> (${all[0][1]}%)<br>Strongest: <b>${esc(all.at(-1)[0].n)}</b> (${all.at(-1)[1]}%)`:'Complete a drill to see your mastery profile.'}</p>
   ${lastH.length?`<div class="bars">${lastH.map(x=>`<i title="${x.s}%" style="--h:${Math.max(x.s,4)}%"><em>${x.s}</em></i>`).join('')}</div>`:'<p class="mu">No runs yet. Win your first battle!</p>'}</div>`;
   mount($('#st'),{mode:'hero',hero:h.id,shift:.6,accent:0x7c5cff});
@@ -121,7 +121,7 @@ VIEWS.map=function(){const L=subs();
 VIEWS.sub=function(){const ctx=A&&typeof A==='object'?A:null,s=sub(ctx?ctx.id:A),dn=ctx?(window.JN&&JN.done(ctx.ch,ctx.k)):S.les[s.id],m=mast(s);
   $('#app').innerHTML=`<button class="btn ghost sm" ${ctx?'id="bk2"':'data-v="map"'}>← ${ctx?'Chapter':'Journey'}</button>
   <div class="banner" style="--c:${s.col}"><span class="bic">${s.ic}</span><div><h1>${esc(s.n)}</h1><span class="tag">${s.q.length} questions · ${s.c.length} cards · ${m===null?'not started':'mastery '+m+'%'}</span></div></div>
-  <div class="card"><h3>Lesson</h3><p>${esc(s.l)}</p>${s.k?`<h3>Quick facts</h3><p class="mu">${esc(s.k)}</p>`:''}
+  <div class="card"><h3>Lesson</h3><p>${esc(s.l)}</p>${s.k?`<h3>Quick facts</h3>${Array.isArray(s.k)?'<ul class="kf">'+s.k.map(f=>'<li>'+esc(f)+'</li>').join('')+'</ul>':'<p class="mu">'+esc(s.k)+'</p>'}`:''}
   <button class="btn ${dn?'ghost':'pri'}" id="rd" ${dn?'disabled':''}>${dn?'Lesson completed ✓':ctx?'Briefing complete: continue (+15 XP)':'I reviewed it: recalled in my own words (+15 XP)'}</button></div>
   <h2>Tap a description to reveal the term</h2><div class="mini">${s.c.map(c=>`<button class="flip" aria-label="Flip card"><span class="fi"><span class="ff">${esc(c[1])}</span><span class="fb"><b>${esc(c[0])}</b>${c[2]?`<em class="exs">e.g. ${esc(c[2])}</em>`:''}</span></span></button>`).join('')}</div>
   <div class="row2"><button class="btn gold" id="dr">⚔️ Battle drill</button><button class="btn aqua" id="dr2">All ${s.q.length} questions</button></div>`;
@@ -136,17 +136,17 @@ VIEWS.find=function(){$('#app').innerHTML='<h1>Search</h1><input id="q" class="i
 /* ---------- PLAY ---------- */
 const MODES={battle:{n:'Misconception Battle',lives:3,inst:1},daily:{n:'Daily Challenge',lives:3,inst:1},speed:{n:'Speed Round',lives:0,inst:1,time:60},drill:{n:'Drill',lives:0,inst:1},weak:{n:'Weak Spots',lives:0,inst:1},mock:{n:'Boss Exam',lives:0,inst:0},story:{n:'Story Battle',lives:3,inst:1}};
 VIEWS.play=function(){const tot=totalQ(),L=subs();
-  $('#app').innerHTML=`<h1>Choose your challenge</h1><p class="mu">${tot} questions available on the ${S.p=='r'?'RPsy':'RGC'} path.</p>
+  $('#app').innerHTML=`<h1>Side quests and game modes</h1><p class="mu">${tot} practice questions are ready for you.</p>
   <div class="modes">
-   <button class="mode tilt m1" id="m1"><span class="mi">⚔️</span><b>Misconception Battle</b><small>8 questions · 3 hearts · defeat the boss</small></button>
-   <button class="mode tilt m2" id="m2"><span class="mi">🚀</span><b>Speed Round</b><small>60 seconds. Build a combo!</small></button>
+   <button class="mode tilt m1" id="m1"><span class="mi">⚔️</span><b>Misconception Battle</b><small>8 questions and 3 hearts. Defeat the monsters.</small></button>
+   <button class="mode tilt m2" id="m2"><span class="mi">🚀</span><b>Speed Round</b><small>60 seconds. Answer fast and build a combo!</small></button>
    <button class="mode tilt m3" id="m3"><span class="mi">☀️</span><b>Daily Challenge</b><small>${S.daily===td()?'Done today ✓ (replay)':'10 questions · +50 XP'}</small></button>
-   <button class="mode tilt m4" id="m4"><span class="mi">👑</span><b>Boss Exam</b><small>Timed mock exam, feedback at the end</small></button>
-   <button class="mode tilt m6" id="m6"><span class="mi">🤺</span><b>Battle Friends</b><small>Live 2–4 player duel · hit points · rankings</small></button>
-   <button class="mode tilt m5" id="m5"><span class="mi">🩹</span><b>Weak Spots</b><small>${S.err.length} saved mistakes to retry</small></button>
+   <button class="mode tilt m4" id="m4"><span class="mi">👑</span><b>Boss Exam</b><small>Timed practice exam. See your answers at the end.</small></button>
+   <button class="mode tilt m6" id="m6"><span class="mi">🤺</span><b>Battle Friends</b><small>Play live with 2 to 4 friends. Keep a room scoreboard.</small></button>
+   <button class="mode tilt m5" id="m5"><span class="mi">🩹</span><b>Weak Spots</b><small>Retry ${S.err.length} question${S.err.length==1?'':'s'} you missed</small></button>
   </div>
   <h2>Subject drills</h2><div class="chipsrow">${L.map(s=>`<button class="sc" style="--c:${s.col}" data-v="sub" data-a="${s.id}">${s.ic} ${esc(s.n.replace('Advance ','').replace('Law & Ethics: ','Ethics: '))}</button>`).join('')}</div>
-  <div class="card bossc" id="bx" hidden><h3>Boss Exam length</h3><p class="mu">One minute per item. Randomized across all subjects.</p><div class="chipsrow">${[10,25,50,100,tot].filter((v,i,a)=>v<=tot&&a.indexOf(v)==i).map(v=>`<button class="btn sm pri" data-n="${v}">${v===tot?'All '+v:v} items</button>`).join('')}</div></div>`;
+  <div class="card bossc" id="bx" hidden><h3>Boss Exam length</h3><p class="mu">You get one minute per question. Questions come from all subjects.</p><div class="chipsrow">${[10,25,50,100,tot].filter((v,i,a)=>v<=tot&&a.indexOf(v)==i).map(v=>`<button class="btn sm pri" data-n="${v}">${v===tot?'All '+v:v} questions</button>`).join('')}</div></div>`;
   $('#m1').onclick=()=>start('battle',L,8,{boss:1});$('#m2').onclick=()=>start('speed',L,300);$('#m3').onclick=startDaily;
   $('#m4').onclick=()=>{$('#bx').hidden=false;$('#bx').scrollIntoView({behavior:'smooth',block:'center'})};
   $$('[data-n]').forEach(b=>b.onclick=()=>start('mock',L,+b.dataset.n));
@@ -188,11 +188,11 @@ function answer(j){const z=S.sess,it=z.items[z.k];if(z.ans[z.k]!==undefined)retu
   z.ans[z.k]=j;const d=S.done[s.id]||(S.done[s.id]={a:0,c:0});d.a++;if(ok)d.c++;S.fa[key]=ok?1:0;S.tot.a++;if(ok)S.tot.c++;touch();S.day.q++;
   const ei=S.err.findIndex(e=>e.s+'.'+e.i==key);if(ok&&ei>=0)S.err.splice(ei,1);else if(!ok&&ei<0)S.err.push({s:s.id,i:it.i});
   let pop=null;const btn=$(`.opt[data-j="${j}"]`);
-  if(ok){z.combo++;z.best=Math.max(z.best,z.combo);S.tot.best=Math.max(S.tot.best,z.combo);const x=(mock?15:10)+Math.min(z.combo,6)*2;z.gxp+=x;gain(x,btn);SND.ok();buzz(15);if(z.combo===5&&!z.shield&&M.lives){z.shield=1;toast('Shield earned! Your next miss is free.','🛡')}
+  if(ok){z.combo++;z.best=Math.max(z.best,z.combo);S.tot.best=Math.max(S.tot.best,z.combo);const x=(mock?15:10)+Math.min(z.combo,6)*2;z.gxp+=x;gain(x,btn);SND.ok();buzz(15);if(z.combo===5&&!z.shield&&M.lives){z.shield=1;toast('Shield earned! Your next wrong answer will not cost a heart.','🛡')}
     const alive=z.hp&&z.hits<z.hp&&!z.won;if(alive)z.hits++;const dead=alive&&z.hits>=z.hp;
     if(dead)defeatFoe(z);
     if(ST&&M.inst){if(alive)ST.attack(()=>{if(dead){ST.enemyDie();ST.cheer()}else ST.enemyHit()});else ST.cheer()}}
-  else{z.combo=0;if(M.lives){if(z.shield){z.shield=0;toast('Shield absorbed the hit!','🛡')}else z.lives--}SND.no();buzz([40,40,40]);
+  else{z.combo=0;if(M.lives){if(z.shield){z.shield=0;toast('Your shield blocked the hit!','🛡')}else z.lives--}SND.no();buzz([40,40,40]);
     if(ST&&M.inst){ST.enemyAttack()}}
   if(mock){z.k++;save();return qstep()}
   $$('.opt').forEach(b=>{const jj=+b.dataset.j;b.disabled=true;if(jj===0)b.classList.add('c');else if(jj===j)b.classList.add('w')});
@@ -219,13 +219,13 @@ function finish(){clearInterval(TM);const z=S.sess;if(!z||z.done)return;z.done=t
   const res={z,ok,tot,sc,dead,won,bonus,first,jn,stars:jn?jn.stars:sc>=85?3:sc>=60?2:sc>0?1:0};S.sess=null;save();A=res;go('res',res)}
 VIEWS.res=function(){const{z,ok,tot,sc,dead,won,bonus,stars,first}=A,M=MODES[z.type],by={};
   z.items.slice(0,Math.max(tot,z.ans.length)).forEach((it,k)=>{if(z.ans[k]===undefined)return;const s=sub(it.s);by[s.n]=by[s.n]||[0,0];by[s.n][1]++;if(z.ans[k]===0)by[s.n][0]++});
-  const msg=dead?'Out of hearts. Review the rationales and try again!':z.type=='speed'?`Time! ${ok} correct, best combo x${z.best}.`:sc>=75?'Strong result. Keep building consistency across sessions.':'Review the rationales below; missed items are saved to your Mistakes tab.';
+  const msg=dead?'You ran out of hearts. Read the explanations below and try again.':z.type=='speed'?`Time is up! You got ${ok} right. Best combo: x${z.best}.`:sc>=75?'Great result. Keep practicing a little every day.':'Read the explanations below. Questions you missed are saved in your Mistakes tab.';
   $('#app').innerHTML=`<div class="stage3 win" id="st"></div>
   <div class="resh"><div class="stars">${[0,1,2].map(i=>`<span class="${i<stars?'on':''}" style="--d:${i*.25}s">★</span>`).join('')}</div><h1>${dead?'Defeated':z.story?(won?z.foe+' defeated!':'The monster survived'):(z.kills?z.kills+' monster'+(z.kills>1?'s':'')+' slain':'Run complete')}</h1><div class="big" id="bg">0%</div><p class="mu">${ok}/${tot} correct · +${bonus} bonus XP${first?' (daily bonus!)':''}</p><p>${msg}</p></div>
   ${A.jn?window.JN.resButtons(A):'<div class="row2"><button class="btn gold" id="ag">↻ Play again</button><button class="btn pri" data-v="home">Home</button></div>'}
   ${S.err.length?`<button class="btn ghost wide" id="wk">🩹 Retry ${S.err.length} saved mistake${S.err.length>1?'s':''}</button>`:''}
-  <p class="mu">By competency: ${Object.entries(by).map(([n,v])=>esc(n)+' '+v[0]+'/'+v[1]).join(' · ')||'n/a'}</p>
-  <h2>Rationales</h2>${z.items.slice(0,Math.max(tot,z.ans.length)).map((it,k)=>{if(z.ans[k]===undefined)return'';const q=sub(it.s).q[it.i],g=z.ans[k];return `<details class="card rat ${g===0?'ok':'no'}"><summary><b>${g===0?'✓':'✗'}</b> ${esc(q.q)}</summary><p><b>Answer:</b> ${esc(q.o[0])}</p><p class="mu">${esc(Array.isArray(q.x)?q.x[0]:q.x)}${g!==0&&Array.isArray(q.x)?'<br>Your answer ('+esc(q.o[g])+'): '+esc(q.x[g]||''):''}</p></details>`}).join('')}`;
+  <p class="mu">Score by subject: ${Object.entries(by).map(([n,v])=>esc(n)+' '+v[0]+'/'+v[1]).join(' · ')||'n/a'}</p>
+  <h2>Explanations</h2>${z.items.slice(0,Math.max(tot,z.ans.length)).map((it,k)=>{if(z.ans[k]===undefined)return'';const q=sub(it.s).q[it.i],g=z.ans[k];return `<details class="card rat ${g===0?'ok':'no'}"><summary><b>${g===0?'✓':'✗'}</b> ${esc(q.q)}</summary><p><b>Answer:</b> ${esc(q.o[0])}</p><p class="mu">${esc(Array.isArray(q.x)?q.x[0]:q.x)}${g!==0&&Array.isArray(q.x)?'<br>Your answer ('+esc(q.o[g])+'): '+esc(q.x[g]||''):''}</p></details>`}).join('')}`;
   const el=$('#st');mount(el,{mode:'hero',hero:hero().id,accent:0xffc83d});if(ST){setTimeout(()=>ST&&(won||sc>=60?ST.cheer():ST.wave()),400)}
   if(!dead&&sc>=60){confetti(90);SND.win()}
   let v=0;const bg=$('#bg'),t=setInterval(()=>{v+=Math.max(1,sc/25|0);if(v>=sc){v=sc;clearInterval(t)}bg.textContent=v+'%'},30);
@@ -236,7 +236,7 @@ VIEWS.res=function(){const{z,ok,tot,sc,dead,won,bonus,stars,first}=A,M=MODES[z.t
 let CT='rev',FREE=null;
 VIEWS.cards=function(){const L=FREE||dueCards(),ctxc=!!window.CARDCTX,tabs=ctxc?'':`<div class="seg"><button class="${CT=='rev'?'on':''}" data-t="rev">Flashcards</button><button class="${CT=='err'?'on':''}" data-t="err">Mistakes (${S.err.length})</button></div>`;
   if(CT==='err')return mistakes(tabs);
-  if(!L.length){$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}<div class="card center"><div class="trophy">🎉</div><h3>All caught up!</h3><p class="mu">Cards return on a spaced schedule (1, 3, 7, 14 days).</p><button class="btn pri" id="fa">Study all ${subs().reduce((a,s)=>a+s.c.length,0)} cards anyway</button></div>`;$$('[data-t]').forEach(b=>b.onclick=()=>{CT=b.dataset.t;render()});$('#fa').onclick=()=>{FREE=shuf(subs().flatMap(s=>s.c.map((c,i)=>({k:s.id+'.'+i,c,s,free:1}))));render()};return}
+  if(!L.length){$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}<div class="card center"><div class="trophy">🎉</div><h3>All caught up!</h3><p class="mu">Cards come back after 1, 3, 7 and 14 days to help you remember them.</p><button class="btn pri" id="fa">Study all ${subs().reduce((a,s)=>a+s.c.length,0)} cards anyway</button></div>`;$$('[data-t]').forEach(b=>b.onclick=()=>{CT=b.dataset.t;render()});$('#fa').onclick=()=>{FREE=shuf(subs().flatMap(s=>s.c.map((c,i)=>({k:s.id+'.'+i,c,s,free:1}))));render()};return}
   const c=L[0];$('#app').innerHTML=`<h1>${ctxc?'Warm-up cards':'Flashcards'}</h1>${tabs}<p class="mu chint">${L.length} ${FREE?'in this study set':'due'} · ${c.s.ic} ${esc(c.s.n)}. Read the description, say the term aloud, then flip.</p>
   <div class="fscene"><div class="fcard" id="fc" tabindex="0" role="button" aria-label="Flip card"><div class="fside ffr" style="--c:${c.s.col}"><span class="tag">Description</span><div class="${c.c[1].length>90?'long':''}">${esc(c.c[1])}</div><small>What is this called? Tap to flip</small></div><div class="fside fbk"><span class="tag">Term</span><div class="term">${esc(c.c[0])}</div>${c.c[2]?`<p class="exs"><b>Real-life example:</b> ${esc(c.c[2])}</p>`:''}</div></div></div>
   <div class="row2" id="bt" style="visibility:hidden"><button class="btn no" id="no">✗ Missed it</button><button class="btn ok" id="yes">✓ Got it</button></div>${FREE?`<button class="btn ghost sm" id="ex">${ctxc?'Back to chapter':'End study set'}</button>`:''}`;
@@ -253,7 +253,7 @@ function mistakes(tabs){$('#app').innerHTML=`<h1>Flashcards</h1>${tabs}`+(S.err.
 
 /* ---------- HERO PICKER ---------- */
 VIEWS.hero=function(){const first=A&&A.first,sel=S.hero||R3.ROSTER[0].id;let cur=sel;
-  $('#app').innerHTML=`<h1>${first?'Choose your psychologist':'Your psychologists'}</h1><p class="mu">${first?'Pick a companion to study and battle with. ':''}Avatars are stylized 3D illustrations, not portraits. Drag to rotate. New psychologists unlock as you level up (you are Lv ${lvl()}).</p>
+  $('#app').innerHTML=`<h1>${first?'Choose your psychologist':'Your psychologists'}</h1><p class="mu">${first?'Pick a companion to study and battle with. ':''}These are stylized 3D illustrations, not real portraits. Drag to rotate. Level up to unlock more psychologists (you are level ${lvl()}).</p>
   <div class="stage3 big" id="st"></div><div class="plate" id="pl"></div>
   <div class="roster">${R3.ROSTER.map(r=>{const u=r.lv<=lvl();return `<button class="rc tilt ${u?'':'lk'}" data-h="${r.id}" aria-label="${u?esc(r.n):'Locked until level '+r.lv}">${portrait(r.id,200)}<b>${u?esc(r.n):'Locked'}</b><small>${u?esc(r.y):'Unlocks at Lv '+r.lv}</small></button>`}).join('')}</div>`;
   const show=id=>{const r=R3.byId[id],u=r.lv<=lvl();cur=id;if(ST&&u)ST.setHero(id);$('#pl').innerHTML=u?`<div><b>${esc(r.n)}</b><small>${esc(r.tag)} · ${esc(r.y)}<br>${esc(r.bio)}</small></div><button class="btn ${id===S.hero?'ghost':'gold'} sm" id="ch">${id===S.hero?'Selected ✓':'Choose'}</button>`:`<div><b>🔒 Locked</b><small>Reach Lv ${r.lv} to unlock this psychologist.</small></div>`;$$('.rc').forEach(b=>b.classList.toggle('sel',b.dataset.h===id));const ch=$('#ch');if(ch)ch.onclick=()=>{S.hero=id;save();SND.up();confetti(40);if(first)go('home');else render()}};
@@ -273,8 +273,8 @@ VIEWS.me=function(){const L=lvl(),b=40*(L-1)**2,n=40*L*L,h=hero(),r=readiness();
    <label><span>Theme</span><select id="s3" class="inp"><option value="auto">Match device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
    <label><span>Text size</span><input type="range" id="s4" min=".9" max="1.3" step=".05" value="${S.set.fz}"></label>
    <button class="btn ghost" id="s5">Reset all progress</button></div>
-  <p class="mu">${S.p=='r'?'RPsy':'RGC'} readiness estimate: ${r.v}%. It needs consistent Boss Exam results and is not a prediction.</p>
-  <details class="how"><summary>About this app</summary><p class="mu">All questions are original practice items written for this app (simulated, not actual or leaked board questions). Simulated scores do not predict or guarantee actual PRC results. Law facts and exam structure were checked against PRC and Philippine statute sources on Nov 3, 2026; clinical content follows standard textbooks and is not individually cited. Cross-check with your textbooks and the current PRC table of specifications before relying on any item. Character avatars are stylized 3D illustrations, not portraits.</p></details>`;
+  <p class="mu">${S.p=='r'?'RPsy':'RGC'} readiness estimate: ${r.v}%. It becomes more reliable after 3 Boss Exams, and it is not a prediction.</p>
+  <details class="how"><summary>About this app</summary><p class="mu">All questions are original practice questions written for this app. They are not actual or leaked board exam questions. Practice scores do not predict or guarantee your real PRC result. Philippine law facts and the exam structure were checked against PRC and statute sources on November 3, 2026. Clinical content follows standard textbooks and is not cited question by question. Please cross-check with your textbooks and the current PRC table of specifications before relying on any question. The characters are stylized 3D illustrations, not real portraits.</p></details>`;
   if(window.OL)OL.bind();
   $('#s3').value=S.set.theme;
   $('#s1').onchange=e=>{S.set.snd=+e.target.checked;save();SND.tap()};$('#s2').onchange=e=>{S.set.mo=+e.target.checked;save();applySet()};$('#s3').onchange=e=>{S.set.theme=e.target.value;save();applySet()};$('#s4').oninput=e=>{S.set.fz=+e.target.value;save();applySet()};

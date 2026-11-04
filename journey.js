@@ -43,7 +43,7 @@ const CH=[
  blurb:'Everything you have learned, from every realm, in one last stand.',
  intro:['We have arrived. The Licensure Citadel, where all you have learned is put to the test.','The questions here come from every realm you crossed.','At its heart waits the Doubt Colossus. It feeds on every “I’m not ready.”'],
  boss:['M:YOU ARE NOT READY. YOU WILL NEVER BE READY.','You are. Every chapter proved it. Now show it!'],
- outro:['The Colossus crumbles to dust. The Citadel gates swing open.','You walked the whole road. You are ready for the board exam. Go and become a psychologist!'],
+ outro:['The Colossus crumbles to dust. The Citadel gates swing open.','You walked the whole road. Keep practicing, and good luck on the board exam!'],
  st:[{t:'brief'},{t:'battle',n:12,need:8,xp:50},{t:'boss',n:20,need:15,xp:120}]}
 ];
 const DEF=[{t:'brief'},{t:'cards',n:6},{t:'battle',n:8,need:5,xp:30},{t:'battle',n:8,need:5,xp:30},{t:'boss',n:10,need:7,xp:60}];
@@ -60,7 +60,7 @@ const stars=(c,k)=>{const v=sg(c,k);return '★'.repeat(v)+'☆'.repeat(Math.max
 function next(){for(let c=0;c<CH.length;c++){if(!chOpen(c))break;for(let k=0;k<CH[c].st.length;k++)if(!done(c,k))return[c,k]}return null}
 function stName(c,k){const s=CH[c].st[k];return s.t==='brief'?'Briefing':s.t==='cards'?'Warm-up cards':s.t==='boss'?'Boss: '+CH[c].bossName.replace(/^The /,''):'Trial '+(k===2?'I':k===3?'II':'')}
 const stIcon=s=>s.t==='brief'?'📜':s.t==='cards'?'🃏':s.t==='boss'?'👹':'⚔️';
-function stDesc(c,k){const s=CH[c].st[k];return s.t==='brief'?'Story and lesson':s.t==='cards'?'Review 6 key cards':`${s.n} questions · answer ${s.need} correctly to win`}
+function stDesc(c,k){const s=CH[c].st[k];return s.t==='brief'?'Story and lesson':s.t==='cards'?'Review 6 key cards':`${s.n} questions · get ${s.need} right to win`}
 const chStars=c=>CH[c].st.reduce((a,_,k)=>a+sg(c,k),0);
 
 function scene(o){go('scene',o)}

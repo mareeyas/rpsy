@@ -10,7 +10,7 @@ const localSave=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const lvOf=xp=>Math.floor(Math.sqrt((xp||0)/40))+1;
 async function api(path,o={}){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),12000);
   try{const r=await fetch(API+path,{...o,signal:ctl.signal,headers:{'content-type':'application/json',...(AU?{authorization:'Bearer '+AU.token}:{}),...(o.headers||{})}});
-    let d={};try{d=await r.json()}catch(e){if(r.ok||r.status===404){const x=new Error('Online features are not available on this host.');x.status=404;throw x}}
+    let d={};try{d=await r.json()}catch(e){if(r.ok||r.status===404){const x=new Error('Online features are not available here. Open the app from its main website to sign in.');x.status=404;throw x}}
     if(!r.ok){const e=new Error(d.error||'Error '+r.status);e.status=r.status;throw e}return d}
   catch(e){if(e.name==='AbortError'){const x=new Error('Server did not respond. Check your connection.');x.status=0;throw x}throw e}finally{clearTimeout(t)}}
 
@@ -92,13 +92,13 @@ function actions(){const host=BT.host===BT.you&&BT.you,few=BT.players.length<2;
   return host?`<label class="qsel mu">Questions <select id="lq" class="inp">${[5,8,12].map(n=>`<option ${n==BT.n?'selected':''}>${n}</option>`).join('')}</select></label><button class="btn gold xl wide" id="lst" ${few?'disabled':''}>${few?'Waiting for another player…':BT.rounds?'⚔️ Play again in this room':'⚔️ Start battle'}</button>`:`<p class="mu center">Waiting for the host to start${BT.rounds?' the next battle':''}…</p>`}
 function bindActions(){const rj=$('#lrj');if(rj)rj.onclick=()=>join(BT.code);if($('#lq'))$('#lq').onchange=e=>BT.n=+e.target.value;const s=$('#lst');if(s)s.onclick=startBattle}
 VIEWS.vs=function(){
-  $('#app').innerHTML=`<h1>🤺 Battle Friends</h1><p class="mu">2–4 players answer the same questions at the same time. Every correct answer damages everyone else’s HP, and faster answers score more. Keep the same room to play again and again; it tracks who wins the most battles.</p>
+  $('#app').innerHTML=`<h1>🤺 Battle Friends</h1><p class="mu">Two to four players answer the same questions at the same time. Each correct answer hurts the other players, and faster answers earn more points. Stay in the same room to play again. The room keeps score of who wins the most battles.</p>
   ${AU?`<button class="btn gold xl wide" id="vc">Create a room</button><div class="card"><h3>Join with a code</h3><input class="inp codein" id="vj" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocomplete="off" spellcheck="false"><button class="btn pri wide" id="vjb">Join battle</button></div>`:`<div class="card center"><div class="trophy">🔒</div><p>Sign in to battle other players.</p><button class="btn gold" data-v="me">Sign in or create account</button></div>`}`;
   if(AU){$('#vc').onclick=create;$('#vjb').onclick=()=>join($('#vj').value);$('#vj').onkeydown=e=>{if(e.key==='Enter')join($('#vj').value)}}};
 function copyLink(){const l=link(BT.code);navigator.clipboard?navigator.clipboard.writeText(l).then(()=>toast('Invite link copied','📋')).catch(()=>toast('Code: '+BT.code,'📋')):toast('Code: '+BT.code,'📋')}
 function shareLink(){const l=link(BT.code);if(navigator.share)navigator.share({title:'RPsy battle',text:'Join my RPsy battle! Room '+BT.code,url:l}).catch(()=>{});else copyLink()}
 function lobby(){if(!BT)return go('vs');
-  if(V!=='lobby'||!$('#lp')){$('#app').innerHTML=`<div class="fit lobfit"><button class="btn ghost sm" id="lx">← Leave room</button><div class="card center rm"><small class="mu">Room code · stays open, reuse it any time</small><div class="rcode" id="rcode">${esc(BT.code)}</div><div class="row2"><button class="btn ghost sm" id="lcp">📋 Copy link</button><button class="btn ghost sm" id="lsh">📤 Share</button></div></div><div class="lob" id="lp"></div><div id="lt"></div><div id="la" class="lact"></div></div>`;
+  if(V!=='lobby'||!$('#lp')){$('#app').innerHTML=`<div class="fit lobfit"><button class="btn ghost sm" id="lx">← Leave room</button><div class="card center rm"><small class="mu">Room code. The room stays open, so you can use it again.</small><div class="rcode" id="rcode">${esc(BT.code)}</div><div class="row2"><button class="btn ghost sm" id="lcp">📋 Copy link</button><button class="btn ghost sm" id="lsh">📤 Share</button></div></div><div class="lob" id="lp"></div><div id="lt"></div><div id="la" class="lact"></div></div>`;
     $('#lx').onclick=()=>{leave();go('vs')};$('#lcp').onclick=copyLink;$('#lsh').onclick=shareLink}
   $('#lp').innerHTML=BT.players.length?BT.players.map(p=>`<div class="lp ${p.on?'':'off'} ${p.uid===BT.you?'me':''}">${av(heroOf(p))}<b>${esc(p.name)}</b><small>${p.uid===BT.host?'👑 Host':'Ready'}${p.uid===BT.you?' · You':''}</small></div>`).join('')+Array.from({length:Math.max(0,4-BT.players.length)},()=>'<div class="lp empty"><span class="pt av em">?</span><small>Waiting…</small></div>').join(''):'<p class="mu center">Connecting…</p>';
   $('#lt').innerHTML=tallyHtml();$('#la').innerHTML=actions();bindActions()}
@@ -154,7 +154,7 @@ VIEWS.vsres=function(){if(!BT||!BT.end)return go('vs');const r=BT.end;
   resParts();$('#rl').onclick=copyLink;$('#lv').onclick=()=>{leave();go('home')}};
 /* ---- invite link landing: ask to sign in, then drop the player into the room ---- */
 VIEWS.invite=function(){const code=sessionStorage.getItem('rpsy_join')||'';
-  $('#app').innerHTML=`<div class="card center invite"><div class="trophy">🤺</div><h1>You’re invited to a battle!</h1><p class="mu">Room <b class="rcode sm">${esc(code)}</b></p><p>Sign in or create a free account and you’ll go straight into the room.</p></div>${card()}`;bind()};
+  $('#app').innerHTML=`<div class="card center invite"><div class="trophy">🤺</div><h1>You’re invited to a battle!</h1><p class="mu">Room <b class="rcode sm">${esc(code)}</b></p><p>Sign in or create a free account, and you will go straight into the room.</p></div>${card()}`;bind()};
 
 /* ---- boot ---- */
 addEventListener('online',()=>{if(AU)push()});
